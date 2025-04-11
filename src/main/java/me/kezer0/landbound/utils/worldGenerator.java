@@ -1,80 +1,75 @@
 package me.kezer0.landbound.utils;
 
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.util.*;
 
 public class worldGenerator {
 
     private static final int GRID_SIZE = 7;
-    private char[][] chunkStates;
-    private BiomeDefinition[][] biomeMap;
-    private long seed;
-    private File islandFile;
-    private FileConfiguration config;
+    private final char[][] chunkStates;
+    private final BiomeDefinition[][] biomeMap;
+    private final long seed;
+    private final File islandFile;
+    private final FileConfiguration config;
 
-    public static class BiomeDefinition {
-        private final String name;
-        private final int temperature; // 1 = ciepły, 0 = neutralny, -1 = zimny
+    public record BiomeDefinition(String name, int temperature) {}
 
-        public BiomeDefinition(String name, int temperature) {
-            this.name = name;
-            this.temperature = temperature;
-        }
-        public String getName() {
-            return name;
-        }
-        public int getTemperature() {
-            return temperature;
-        }
-    }
-
-    // Dostępne biomy
-    private BiomeDefinition[] availableBiomes = new BiomeDefinition[] {
-            new BiomeDefinition("desert", 1),
-            new BiomeDefinition("savanna", 1),
-            new BiomeDefinition("plains", 0),
-            new BiomeDefinition("forest", 0),
-            new BiomeDefinition("tundra", -1)
+    private final BiomeDefinition[] availableBiomes = new BiomeDefinition[] {
+        new BiomeDefinition("desert", 1),
+        new BiomeDefinition("savanna", 1),
+        new BiomeDefinition("plains", 0),
+        new BiomeDefinition("forest", 0),
+        new BiomeDefinition("tundra", -1)
     };
 
-    public worldGenerator(File islandFile, long seed) {
-        this.islandFile = islandFile;
-        this.seed = seed;
-        config = YamlConfiguration.loadConfiguration(islandFile);
-        chunkStates = new char[GRID_SIZE][GRID_SIZE];
-        biomeMap = new BiomeDefinition[GRID_SIZE][GRID_SIZE];
+    public worldGenerator(Player player) {
+        UUID uuid = player.getUniqueId();
+        this.seed = uuid.getLeastSignificantBits(); // Można zmienić na cokolwiek
+        this.islandFile = new File("plugins/LandBound/players/" + uuid + "/island.yml");
+        this.config = YamlConfiguration.loadConfiguration(islandFile);
+        this.chunkStates = new char[GRID_SIZE][GRID_SIZE];
+        this.biomeMap = new BiomeDefinition[GRID_SIZE][GRID_SIZE];
     }
 
     public void generateWorld() {
+        if (islandFile.exists()) {
+            Bukkit.getLogger().info("[LandBound] Plik wyspy już istnieje, pomijam generację.");
+            return;
+        }
+        Bukkit.getLogger().info("[LandBound] Generuję nową wyspę dla gracza...");
+
+        generateChunkStates();
+        generateBiomeMap();
+
+        ensureBiomePresence(new Random(seed), 1);  // Ciepły
+        ensureBiomePresence(new Random(seed), -1); // Zimny
+    }
+
+    private void generateChunkStates() {
+        for (int i = 0; i < GRID_SIZE; i++) {
+            for (int j = 0; j < GRID_SIZE; j++) {
+                chunkStates[i][j] = (i == 3 && j == 3) ? 'O' : 'N';
+            }
+        }
+    }
+
+    private void generateBiomeMap() {
         Random random = new Random(seed);
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
-                if (i == 3 && j == 3) {
-                    chunkStates[i][j] = 'O';
-                } else {
-                    chunkStates[i][j] = 'N';
-                }
+                List<BiomeDefinition> options = getAllowedBiomes(i, j);
+                if (options.isEmpty()) options.add(new BiomeDefinition("plains", 0));
+                BiomeDefinition chosen = options.get(random.nextInt(options.size()));
+                biomeMap[i][j] = chosen;
+                Bukkit.getLogger().info(String.format("[LandBound] Biom (%d,%d): %s", i, j, chosen.name()));
             }
         }
-        // Generowanie biomów
-        for (int i = 0; i < GRID_SIZE; i++) {
-            for (int j = 0; j < GRID_SIZE; j++) {
-                List<BiomeDefinition> possibleBiomes = getAllowedBiomes(i, j);
-                if (possibleBiomes.isEmpty()) {
-                    possibleBiomes.add(new BiomeDefinition("plains", 0));
-                }
-                BiomeDefinition chosenBiome = possibleBiomes.get(random.nextInt(possibleBiomes.size()));
-                biomeMap[i][j] = chosenBiome;
-            }
-        }
-        ensureBiomePresence(random, 1);
-        ensureBiomePresence(random, -1);
     }
 
     private List<BiomeDefinition> getAllowedBiomes(int i, int j) {
@@ -87,15 +82,16 @@ public class worldGenerator {
                 int ni = i + di;
                 int nj = j + dj;
                 if (ni >= 0 && ni < GRID_SIZE && nj >= 0 && nj < GRID_SIZE && biomeMap[ni][nj] != null) {
-                    int neighborTemp = biomeMap[ni][nj].getTemperature();
-                    if (neighborTemp == 1) hasWarmNeighbor = true;
-                    if (neighborTemp == -1) hasColdNeighbor = true;
+                    int temp = biomeMap[ni][nj].temperature();
+                    if (temp == 1) hasWarmNeighbor = true;
+                    if (temp == -1) hasColdNeighbor = true;
                 }
             }
         }
+
         for (BiomeDefinition biome : availableBiomes) {
-            if (hasWarmNeighbor && biome.getTemperature() == -1) continue;
-            if (hasColdNeighbor && biome.getTemperature() == 1) continue;
+            if (hasWarmNeighbor && biome.temperature() == -1) continue;
+            if (hasColdNeighbor && biome.temperature() == 1) continue;
             candidates.add(biome);
         }
         return candidates;
@@ -103,23 +99,24 @@ public class worldGenerator {
 
     private void ensureBiomePresence(Random random, int requiredTemp) {
         boolean found = false;
-        for (int i = 0; i < GRID_SIZE; i++) {
+        for (int i = 0; i < GRID_SIZE && !found; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
-                if (biomeMap[i][j].getTemperature() == requiredTemp) {
+                if (biomeMap[i][j].temperature() == requiredTemp) {
                     found = true;
                     break;
                 }
             }
-            if (found) break;
         }
+
         if (!found) {
             for (int trial = 0; trial < 100; trial++) {
                 int i = random.nextInt(GRID_SIZE);
                 int j = random.nextInt(GRID_SIZE);
                 List<BiomeDefinition> candidates = getAllowedBiomes(i, j);
                 for (BiomeDefinition biome : candidates) {
-                    if (biome.getTemperature() == requiredTemp) {
+                    if (biome.temperature() == requiredTemp) {
                         biomeMap[i][j] = biome;
+                        Bukkit.getLogger().info("[LandBound] Dodano brakujący biom " + biome.name());
                         return;
                     }
                 }
@@ -128,25 +125,51 @@ public class worldGenerator {
     }
 
     public void saveToConfig() {
-        StringBuilder chunkBuilder = new StringBuilder();
+        List<String> chunkRows = new ArrayList<>();
         for (int i = 0; i < GRID_SIZE; i++) {
+            StringBuilder row = new StringBuilder();
             for (int j = 0; j < GRID_SIZE; j++) {
-                chunkBuilder.append(chunkStates[i][j]);
-                if (j < GRID_SIZE - 1) chunkBuilder.append(",");
+                row.append(chunkStates[i][j]);
+                if (j < GRID_SIZE - 1) row.append(",");
             }
-            if (i < GRID_SIZE - 1) chunkBuilder.append("\n");
+            chunkRows.add(row.toString());
         }
-        config.set("chunks", chunkBuilder.toString());
+        config.set("chunks", chunkRows);
+
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
                 int index = i * GRID_SIZE + j;
-                config.set("bioms." + index, biomeMap[i][j].getName());
+                config.set("biomes." + index, biomeMap[i][j].name());
             }
         }
+
         try {
             config.save(islandFile);
+            Bukkit.getLogger().info("[LandBound] Zapisano plik wyspy: " + islandFile.getPath());
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void loadWorldState() {
+        if (!islandFile.exists()) return;
+
+        List<String> rows = config.getStringList("chunks");
+        for (int i = 0; i < GRID_SIZE; i++) {
+            String[] states = rows.get(i).split(",");
+            for (int j = 0; j < GRID_SIZE; j++) {
+                chunkStates[i][j] = states[j].charAt(0);
+            }
+        }
+
+        for (int i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
+            String name = config.getString("biomes." + i, "plains");
+            biomeMap[i / GRID_SIZE][i % GRID_SIZE] = Arrays.stream(availableBiomes)
+                    .filter(b -> b.name().equals(name))
+                    .findFirst()
+                    .orElse(new BiomeDefinition("plains", 0));
+        }
+
+        Bukkit.getLogger().info("[LandBound] Wczytano istniejący stan świata gracza.");
     }
 }

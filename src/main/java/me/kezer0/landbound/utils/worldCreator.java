@@ -14,49 +14,54 @@ public class worldCreator implements Listener {
 
     private static final int TIME = 6000;
 
-    public static CompletableFuture<World> createWorld(Player player) {
-        return CompletableFuture.supplyAsync(() -> {
-            String worldName = player.getUniqueId().toString();
-            World world = Bukkit.getWorld(worldName);
-            if (world == null) {
-                WorldCreator wc = new WorldCreator(worldName)
-                        .generateStructures(false)
-                        .environment(World.Environment.NORMAL)
-                        .type(WorldType.FLAT)
-                        .generatorSettings("{\"layers\": [{\"block\": \"air\", \"height\": 256}], \"biome\": \"plains\"}");
-                world = Bukkit.createWorld(wc);
-                world.setSpawnLocation(0, 60, 0);
-                generateInitialChunks(world, player);
-            }
-            world.setTime(TIME);
-            return world;
-        });
-    }
+    public static void createWorld(Player player) {
+        String worldName = player.getUniqueId().toString();
 
-    public static World getPlayerLand(Player player) {
-        return Bukkit.getWorld(player.getUniqueId().toString());
+        // Jeśli świat już istnieje – nie rób nic
+        if (Bukkit.getWorld(worldName) != null) return;
+
+        WorldCreator wc = new WorldCreator(worldName)
+                .generateStructures(false)
+                .environment(World.Environment.NORMAL)
+                .type(WorldType.FLAT)
+                .generatorSettings("{\"layers\": [{\"block\": \"air\", \"height\": 256}], \"biome\": \"plains\"}");
+
+        World world = Bukkit.createWorld(wc);
+        world.setSpawnLocation(0, 60, 0);
+        world.setTime(TIME);
+
+        generateInitialChunks(world, player);
     }
 
     private static void generateInitialChunks(World world, Player player) {
         File islandFile = new File("plugins/LandBound/players/" + player.getUniqueId() + "/island.yml");
-        if (!islandFile.exists()) return;
+
+        if (!islandFile.exists()) {
+            // Jeśli plik nie istnieje, tworzymy go i generujemy świat
+            worldGenerator generator = new worldGenerator(player);
+            generator.generateWorld();
+            generator.saveToConfig();
+        }
+
+        // Wczytaj dane ze skonfigurowanego świata
         YamlConfiguration config = YamlConfiguration.loadConfiguration(islandFile);
-        // W configu zapisujemy planszę jako listę wierszy (tekstowych)
         List<String> chunkRows = config.getStringList("chunks");
-        Map<String, Object> biomeMap = config.getConfigurationSection("bioms").getValues(false);
+
+        if (chunkRows.isEmpty()) {
+            Bukkit.getLogger().warning("[LandBound] Plik island.yml istnieje, ale brak w nim danych o chunkach!");
+            return;
+        }
+
+        Map<String, Object> biomeMap = config.getConfigurationSection("biomes").getValues(false);
         int gridSize = chunkRows.size();
+
         for (int z = 0; z < gridSize; z++) {
             String row = chunkRows.get(z);
             String[] states = row.split(",");
             for (int x = 0; x < gridSize; x++) {
                 String state = states[x].trim();
-                if (state.equalsIgnoreCase("O")) {
-                    // Wygeneruj odblokowany chunk
-                    generateChunk(x, z, true, world, biomeMap);
-                } else {
-                    // Generujemy nieodblokowany chunk
-                    generateChunk(x, z, false, world, biomeMap);
-                }
+                boolean unlocked = state.equalsIgnoreCase("O");
+                generateChunk(x, z, unlocked, world, biomeMap);
             }
         }
     }

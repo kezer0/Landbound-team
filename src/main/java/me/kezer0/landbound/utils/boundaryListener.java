@@ -1,7 +1,7 @@
 package me.kezer0.landbound.utils;
 
-import org.bukkit.Location;
-import org.bukkit.World;
+import org.bukkit.*;
+import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -9,28 +9,27 @@ import org.bukkit.event.player.PlayerMoveEvent;
 
 public class boundaryListener implements Listener {
 
-    private final int minX = -8;
-    private final int maxX = 7;
-    private final int minZ = -8;
-    private final int maxZ = 7;
-
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
         Player player = event.getPlayer();
         Location loc = player.getLocation();
         World world = player.getWorld();
-        if (!player.getWorld().getName().equalsIgnoreCase(player.getUniqueId().toString())) return;
-        try {
-            int x = loc.getBlockX();
-            int z = loc.getBlockZ();
-            if (x < minX || x > maxX || z < minZ || z > maxZ) {
-                // Teleportujemy gracza na środek chunka (0,65,0)
-                Location safeLoc = new Location(world, 0, 65, 0);
-                player.teleport(safeLoc);
-                player.sendMessage("Nie możesz wychodzić poza Twoją wyspę! Przenoszę na środek.");
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+
+        // Sprawdzamy czy to jest świat gracza
+        if (!world.getName().equalsIgnoreCase(player.getUniqueId().toString())) return;
+
+        // Sprawdzamy czy stoi w wodzie
+        Block block = loc.getBlock();
+        if (block.getType() != Material.WATER) return;
+
+        // Teleportujemy na najwyższy bezpieczny blok na środku wyspy (0, ?, 0)
+        Location center = new Location(world, 0, 0, 0);
+        int highestY = world.getHighestBlockYAt(center);
+        center.setY(highestY + 1); // 1 ponad najwyższy blok
+        center.setPitch(player.getLocation().getPitch());
+        center.setYaw(player.getLocation().getYaw());
+
+        player.teleport(center);
+        player.sendMessage("Nie możesz wchodzić do wody! Przenoszę Cię na wyspę.");
     }
 }

@@ -3,30 +3,40 @@ package me.kezer0.landbound.player;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.UUID;
+import java.util.*;
 
 public class configPlayer implements Listener {
 
-    private final UUID uuid;
-    private final File playerFolder;
+    private File playerFolder;
     public static File playerFile;
     public static File islandFile;
+    public static File playersFolders;
 
     private FileConfiguration playerConfig;
     private FileConfiguration islandConfig;
 
-    public configPlayer(UUID uuid) {
-        this.uuid = uuid;
+    static {
         File pluginFolder = new File(Bukkit.getPluginsFolder(), "LandBound");
-        File playersFolder = new File(pluginFolder, "players");
-        this.playerFolder = new File(playersFolder, uuid.toString());
+        playersFolders = new File(pluginFolder, "players");
+    }
 
-        this.playerFile = new File(playerFolder, "player.yml");
-        this.islandFile = new File(playerFolder, "island.yml");
+    @EventHandler
+    private void onPlayerJoin(PlayerJoinEvent e){
+        Player player = e.getPlayer();
+        UUID uuid = player.getUniqueId();
+
+        this.playerFolder = new File(playersFolders, uuid.toString());
+        playerFile = new File(playerFolder, "player.yml");
+        islandFile = new File(playerFolder, "island.yml");
+
+        if (playerFolder.exists()) return;
 
         setup();
     }
@@ -35,6 +45,7 @@ public class configPlayer implements Listener {
         if (!playerFolder.exists()) {
             playerFolder.mkdirs();
         }
+
         try {
             if (!playerFile.exists()) {
                 playerFile.createNewFile();
@@ -43,24 +54,20 @@ public class configPlayer implements Listener {
             if (!islandFile.exists()) {
                 islandFile.createNewFile();
                 islandConfig = YamlConfiguration.loadConfiguration(islandFile);
-                StringBuilder chunkBuilder = new StringBuilder();
+
                 int gridSize = 7;
+                List<String> chunkRows = new ArrayList<>();
+
                 for (int i = 0; i < gridSize; i++) {
+                    StringBuilder row = new StringBuilder();
                     for (int j = 0; j < gridSize; j++) {
-                        if (i == 3 && j == 3) {
-                            chunkBuilder.append("O");
-                        } else {
-                            chunkBuilder.append("N");
-                        }
-                        if (j < gridSize - 1) {
-                            chunkBuilder.append(",");
-                        }
+                        row.append((i == 4 && j == 4) ? "O" : "N");
+                        if (j < gridSize - 1) row.append(",");
                     }
-                    if (i < gridSize - 1) {
-                        chunkBuilder.append("\n");
-                    }
+                    chunkRows.add(row.toString());
                 }
-                islandConfig.set("chunks", chunkBuilder.toString());
+
+                islandConfig.set("chunks", chunkRows);
                 islandConfig.set("bioms.24", "plains");
                 islandConfig.save(islandFile);
             }
