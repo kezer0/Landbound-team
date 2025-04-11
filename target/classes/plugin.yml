@@ -1,0 +1,17 @@
+name: Landbound
+version: '1.0-SNAPSHOT'
+main: me.kezer0.landbound.Landbound
+api-version: '1.21'
+authors: [ kezer0 ]
+commands:
+  land:
+    description: "teleports you to your land"
+    usage: "/land [configLand]"
+    aliases: [1]
+    permission: "permission.node"
+    permission-message: "You do not have permission to use this command"
+  hub:
+    description: "teleports you to hub"
+    usage: "/hub"
+    permission: "permission.node"
+    permission-message: "You do not have permission to use this command"

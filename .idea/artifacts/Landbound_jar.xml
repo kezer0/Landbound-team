@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Landbound:jar">
+    <output-path>$USER_HOME$/Desktop/Minecraft/Plugin server 3/plugins</output-path>
+    <root id="archive" name="Landbound.jar">
+      <element id="module-output" name="Landbound" />
+    </root>
+  </artifact>
+</component>
