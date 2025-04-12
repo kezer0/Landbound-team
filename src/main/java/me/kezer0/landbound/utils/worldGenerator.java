@@ -1,9 +1,12 @@
 package me.kezer0.landbound.utils;
 
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,21 +35,21 @@ public class worldGenerator {
         UUID uuid = player.getUniqueId();
         this.seed = uuid.getLeastSignificantBits(); // Można zmienić na cokolwiek
         this.islandFile = new File("plugins/LandBound/players/" + uuid + "/island.yml");
-        this.config = YamlConfiguration.loadConfiguration(islandFile);
+        this.config = islandFile.exists() ? YamlConfiguration.loadConfiguration(islandFile) : new YamlConfiguration();
         this.chunkStates = new char[GRID_SIZE][GRID_SIZE];
         this.biomeMap = new BiomeDefinition[GRID_SIZE][GRID_SIZE];
     }
 
     public void generateWorld() {
-        if (islandFile.exists()) {
-            Bukkit.getLogger().info("[LandBound] Plik wyspy już istnieje, pomijam generację.");
+        if (islandFile.exists() && !config.getStringList("chunks").isEmpty()) {
+            Bukkit.getLogger().info("[LandBound] Plik wyspy już istnieje i zawiera dane, pomijam generację.");
             return;
         }
         Bukkit.getLogger().info("[LandBound] Generuję nową wyspę dla gracza...");
 
         generateChunkStates();
         generateBiomeMap();
-
+        Bukkit.getLogger().info("[LandBound] poprawnie wygenerowano chunki i  biomy");
         ensureBiomePresence(new Random(seed), 1);  // Ciepły
         ensureBiomePresence(new Random(seed), -1); // Zimny
     }
@@ -139,7 +142,8 @@ public class worldGenerator {
         for (int i = 0; i < GRID_SIZE; i++) {
             for (int j = 0; j < GRID_SIZE; j++) {
                 int index = i * GRID_SIZE + j;
-                config.set("biomes." + index, biomeMap[i][j].name());
+                BiomeDefinition biome = biomeMap[i][j];
+                config.set("biomes." + index, biome != null ? biome.name() : "UNKNOWN");
             }
         }
 
@@ -172,4 +176,5 @@ public class worldGenerator {
 
         Bukkit.getLogger().info("[LandBound] Wczytano istniejący stan świata gracza.");
     }
+
 }

@@ -1,6 +1,7 @@
 package me.kezer0.landbound.utils;
 
 import org.bukkit.*;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
@@ -9,6 +10,8 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+
+import static me.kezer0.landbound.player.configPlayer.islandFile;
 
 public class worldCreator implements Listener {
 
@@ -36,14 +39,12 @@ public class worldCreator implements Listener {
     private static void generateInitialChunks(World world, Player player) {
         File islandFile = new File("plugins/LandBound/players/" + player.getUniqueId() + "/island.yml");
 
-        if (!islandFile.exists()) {
-            // Jeśli plik nie istnieje, tworzymy go i generujemy świat
-            worldGenerator generator = new worldGenerator(player);
+        worldGenerator generator = new worldGenerator(player);
+        if (!islandFile.exists() || isIslandEmpty()) {
             generator.generateWorld();
             generator.saveToConfig();
         }
 
-        // Wczytaj dane ze skonfigurowanego świata
         YamlConfiguration config = YamlConfiguration.loadConfiguration(islandFile);
         List<String> chunkRows = config.getStringList("chunks");
 
@@ -51,8 +52,12 @@ public class worldCreator implements Listener {
             Bukkit.getLogger().warning("[LandBound] Plik island.yml istnieje, ale brak w nim danych o chunkach!");
             return;
         }
-
-        Map<String, Object> biomeMap = config.getConfigurationSection("biomes").getValues(false);
+        ConfigurationSection biomeSection = config.getConfigurationSection("biomes");
+        if (biomeSection == null) {
+            Bukkit.getLogger().warning("[LandBound] Brak sekcji 'biomes' w pliku island.yml!");
+            return;
+        }
+        Map<String, Object> biomeMap = biomeSection.getValues(false);
         int gridSize = chunkRows.size();
 
         for (int z = 0; z < gridSize; z++) {
@@ -64,6 +69,10 @@ public class worldCreator implements Listener {
                 generateChunk(x, z, unlocked, world, biomeMap);
             }
         }
+    }
+    private static boolean isIslandEmpty() {
+        YamlConfiguration config = YamlConfiguration.loadConfiguration(islandFile);
+        return !config.contains("chunks") || config.getStringList("chunks").isEmpty();
     }
     private static void generateChunk(int cx, int cz, boolean unlocked, World world, Map<String, Object> biomeData) {
         int baseY = 59; // fundamenty

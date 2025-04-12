@@ -1,12 +1,17 @@
 package me.kezer0.landbound.player;
 
+import me.kezer0.landbound.utils.worldGenerator;
+import org.apache.commons.io.FileUtils;
 import org.bukkit.Bukkit;
+import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,6 +45,59 @@ public class configPlayer implements Listener {
 
         setup();
     }
+    public void unloadWorld(Player player) {
+        String worldName = player.getUniqueId().toString();
+        World world = Bukkit.getWorld(worldName);
+
+        if (world != null) {
+            for (Player p : world.getPlayers()) {
+                p.teleport(Bukkit.getWorlds().get(0).getSpawnLocation());
+            }
+
+            boolean success = Bukkit.unloadWorld(world, false);
+            if (!success) {
+                Bukkit.getLogger().warning("[LandBound] Nie udało się odładować świata: " + worldName);
+                return;
+            }
+
+            File worldFolder = world.getWorldFolder();
+            try {
+                deleteWorldFolder(worldFolder);
+                Bukkit.getLogger().info("[LandBound] Usunięto świat gracza: " + worldName);
+            } catch (IOException e) {
+                Bukkit.getLogger().warning("[LandBound] Błąd przy usuwaniu świata: " + worldName);
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void deleteWorldFolder(File path) throws IOException {
+        if (path.exists()) {
+            File[] files = path.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    if (file.isDirectory()) {
+                        deleteWorldFolder(file);
+                    } else {
+                        if (!file.delete()) {
+                            throw new IOException("Nie można usunąć pliku: " + file.getAbsolutePath());
+                        }
+                    }
+                }
+            }
+            if (!path.delete()) {
+                throw new IOException("Nie można usunąć folderu: " + path.getAbsolutePath());
+            }
+        }
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        Player player = event.getPlayer();
+        worldGenerator generator = new worldGenerator(player);
+        generator.saveToConfig();
+        unloadWorld(player);
+    }
 
     private void setup() {
         if (!playerFolder.exists()) {
@@ -52,26 +110,12 @@ public class configPlayer implements Listener {
             }
 
             if (!islandFile.exists()) {
-                islandFile.createNewFile();
-                islandConfig = YamlConfiguration.loadConfiguration(islandFile);
-
-                int gridSize = 7;
-                List<String> chunkRows = new ArrayList<>();
-
-                for (int i = 0; i < gridSize; i++) {
-                    StringBuilder row = new StringBuilder();
-                    for (int j = 0; j < gridSize; j++) {
-                        row.append((i == 4 && j == 4) ? "O" : "N");
-                        if (j < gridSize - 1) row.append(",");
-                    }
-                    chunkRows.add(row.toString());
+                try {
+                    islandFile.createNewFile();
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-
-                islandConfig.set("chunks", chunkRows);
-                islandConfig.set("bioms.24", "plains");
-                islandConfig.save(islandFile);
             }
-
             playerConfig = YamlConfiguration.loadConfiguration(playerFile);
             islandConfig = YamlConfiguration.loadConfiguration(islandFile);
         } catch (IOException e) {
