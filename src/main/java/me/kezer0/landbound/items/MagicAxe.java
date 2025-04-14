@@ -28,10 +28,12 @@ public class MagicAxe implements Listener {
         ItemStack magicaxe = new ItemStack(Material.DIAMOND_AXE); 
         ItemMeta meta = magicaxe.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName(ChatColor.AQUA + "Magiczna Siekierka");
+            meta.setDisplayName(ChatColor.BOLD + "" + ChatColor.AQUA + "Magiczna Siekierka");
             meta.setLore(List.of(
+                ChatColor.DARK_PURPLE + "EPIC",
                 ChatColor.GRAY + "To nie jest zwykła siekierka...",
-                ChatColor.GOLD + "Funkcja specjalna: Niszczy całe drzewo naraz!"
+                ChatColor.GREEN + "Funkcja specjalna",
+                ChatColor.GOLD + "Niszczy całe drzewo naraz!"
             ));
             meta.addEnchant(Enchantment.UNBREAKING, 3, true); 
             meta.addEnchant(Enchantment.EFFICIENCY, 3, true); 

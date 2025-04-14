@@ -22,7 +22,7 @@ public class EnderBackpack implements Listener {
         ItemStack chest = new ItemStack(Material.ENDER_CHEST); // Użycie Ender Chest jako materiału
         ItemMeta meta = chest.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName(ChatColor.DARK_AQUA + "Plecak Endera");
+            meta.setDisplayName(ChatColor.DARK_AQUA + "" + ChatColor.BOLD + "Plecak Endera");
             meta.setLore(List.of(
                 ChatColor.DARK_PURPLE + "EPIC",
                 ChatColor.GRAY + "Przenośny ender chest",
