@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockFromToEvent;
+import org.bukkit.event.player.PlayerBucketFillEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
@@ -40,11 +41,13 @@ public class boundaryListener implements Listener {
         }
     }
     @EventHandler
-    public void onPlayerInteract(PlayerInteractEvent e){
+    public void onPlayerBucketFill(PlayerBucketFillEvent e) {
         Player player = e.getPlayer();
-        if(e.getMaterial() == Material.WATER){
-            if(player.getInventory().getItemInMainHand().getType() == Material.BUCKET){
-                player.getInventory().setItemInMainHand(ItemStack.of(Material.WATER_BUCKET));
+        if (e.getBlockClicked().getType() == Material.WATER) {
+            if (player.getInventory().getItemInMainHand().getType() == Material.BUCKET) {
+                ItemStack waterBucket = new ItemStack(Material.WATER_BUCKET);
+                player.getInventory().setItemInMainHand(waterBucket);
+                e.getBlockClicked().setType(Material.WATER);
                 e.setCancelled(true);
             }
         }
