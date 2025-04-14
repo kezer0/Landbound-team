@@ -6,7 +6,7 @@ authors: [ kezer0 ]
 commands:
   land:
     description: "teleports you to your land"
-    usage: "/land [configLand]"
+    usage: "/land <config>"
     aliases: [1]
     permission: "permission.node"
     permission-message: "You do not have permission to use this command"

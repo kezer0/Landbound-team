@@ -24,7 +24,7 @@ public class boundaryListener implements Listener {
 
         Location center = new Location(world, 8, 0, 8);
         int highestY = world.getHighestBlockYAt(center);
-        center.setY(highestY + 1); // 1 ponad najwyższy blok
+        center.setY(highestY + 1);
         center.setPitch(player.getLocation().getPitch());
         center.setYaw(player.getLocation().getYaw());
 
