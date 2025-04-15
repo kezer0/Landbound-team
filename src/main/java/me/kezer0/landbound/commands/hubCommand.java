@@ -1,5 +1,7 @@
 package me.kezer0.landbound.commands;
 
+import me.kezer0.landbound.player.playerDataListener;
+import me.kezer0.landbound.utils.worldDataGenerator;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -8,6 +10,8 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.File;
 
 public class hubCommand implements CommandExecutor {
 
@@ -19,7 +23,11 @@ public class hubCommand implements CommandExecutor {
         }
         Player player = (Player) commandSender;
         World world = Bukkit.getWorld("world");
+        File playersRootFolder = playerDataListener.getPlayersRootFolder();
+        File islandFile = new File(playersRootFolder, player.getUniqueId() + "/island.yml");
+        worldDataGenerator generator = new worldDataGenerator(player, islandFile);
         Location location = new Location(world, 1,100,1);
+        generator.saveToConfig();
         player.teleport(location);
 
         return true;
