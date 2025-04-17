@@ -1,4 +1,4 @@
-package me.kezer0.landbound.land;
+package me.kezer0.landbound.land.config;
 
 import me.kezer0.landbound.utils.CColor;
 import org.bukkit.Bukkit;

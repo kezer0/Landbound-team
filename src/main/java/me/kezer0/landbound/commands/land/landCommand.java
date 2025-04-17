@@ -1,7 +1,7 @@
-package me.kezer0.landbound.commands;
+package me.kezer0.landbound.commands.land;
 
-import me.kezer0.landbound.land.configLand;
-import me.kezer0.landbound.utils.worldCreator;
+import me.kezer0.landbound.land.config.configLand;
+import me.kezer0.landbound.land.generation.worldCreator;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.Command;

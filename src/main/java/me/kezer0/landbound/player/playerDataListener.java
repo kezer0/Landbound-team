@@ -1,7 +1,8 @@
 package me.kezer0.landbound.player;
 
-import me.kezer0.landbound.utils.worldCreator;
-import me.kezer0.landbound.utils.worldDataGenerator;
+import me.kezer0.landbound.blocks.blockDataSaver;
+import me.kezer0.landbound.land.generation.worldCreator;
+import me.kezer0.landbound.land.generation.worldDataGenerator;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -16,7 +17,7 @@ import java.util.UUID;
 
 public class playerDataListener implements Listener {
 
-    private static final File playersRootFolder = new File(Bukkit.getPluginsFolder(), "LandBound/players");
+    public static final File playersRootFolder = new File(Bukkit.getPluginsFolder(), "LandBound/players");
 
     static {
         if (!playersRootFolder.exists()) {
@@ -56,10 +57,11 @@ public class playerDataListener implements Listener {
         Player player = event.getPlayer();
         UUID uuid = player.getUniqueId();
 
-        File islandFile = new File(playersRootFolder, uuid.toString() + "/island.yml");
+        File islandFile = new File(playersRootFolder, uuid + "/island.yml");
         worldDataGenerator generator = new worldDataGenerator(player, islandFile);
 
         generator.saveToConfig();
+        blockDataSaver.flushBufferToDisk(uuid);
         unloadAndDeleteWorld(player);
     }
 

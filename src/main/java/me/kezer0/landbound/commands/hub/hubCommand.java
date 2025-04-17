@@ -1,7 +1,7 @@
-package me.kezer0.landbound.commands;
+package me.kezer0.landbound.commands.hub;
 
 import me.kezer0.landbound.player.playerDataListener;
-import me.kezer0.landbound.utils.worldDataGenerator;
+import me.kezer0.landbound.land.generation.worldDataGenerator;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;

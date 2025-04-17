@@ -1,5 +1,6 @@
-package me.kezer0.landbound.utils;
+package me.kezer0.landbound.land.generation;
 
+import me.kezer0.landbound.blocks.blockReconstructor;
 import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.configuration.ConfigurationSection;
@@ -10,6 +11,7 @@ import org.bukkit.event.Listener;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 public class worldCreator implements Listener {
 
@@ -19,7 +21,7 @@ public class worldCreator implements Listener {
 
     public static void createIslandWorld(Player player) {
         String worldName = player.getUniqueId().toString();
-
+        UUID uuid = player.getUniqueId();
         // Jeśli świat już istnieje, nie rób nic
         if (Bukkit.getWorld(worldName) != null) return;
 
@@ -29,11 +31,14 @@ public class worldCreator implements Listener {
                 .type(WorldType.FLAT)
                 .generatorSettings("{\"layers\": [{\"block\": \"air\", \"height\": 256}], \"biome\": \"plains\"}");
 
+
         World world = Bukkit.createWorld(wc);
         world.setSpawnLocation(0, BASE_Y + 1, 0);
         world.setTime(TIME);
 
         generateInitialChunks(world, player);
+        blockReconstructor.loadBlocks(player);
+        Bukkit.getLogger().warning("ENDED WORLD CREAING");
     }
 
     private static void generateInitialChunks(World world, Player player) {

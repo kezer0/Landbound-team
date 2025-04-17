@@ -1,4 +1,4 @@
-package me.kezer0.landbound.utils;
+package me.kezer0.landbound.land.generation;
 
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -50,8 +50,6 @@ public class worldDataGenerator {
             chunkRows.add(row.toString());
         }
         config.set("chunks", chunkRows);
-
-        // Ustawienie wszystkich chunków jako plains
         Map<String, String> biomes = new HashMap<>();
         for (int i = 0; i < GRID_SIZE * GRID_SIZE; i++) {
             biomes.put(String.valueOf(i), "PLAINS");
