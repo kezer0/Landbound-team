@@ -1,5 +1,6 @@
 package me.kezer0.landbound.land.generation;
 
+import me.kezer0.landbound.blocks.blockReconstructor;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -28,8 +29,9 @@ public class worldDataGenerator {
         this.chunkStates = new char[GRID_SIZE][GRID_SIZE];
     }
 
-    public void generateIslandData() {
+   public void generateIslandData(Player player) {
         Bukkit.getLogger().info("[LandBound] Generuję dane chunków dla gracza " + uuid);
+
         for (int z = 0; z < GRID_SIZE; z++) {
             for (int x = 0; x < GRID_SIZE; x++) {
                 chunkStates[x][z] = (x == 3 && z == 3) ? 'O' : 'N'; // Środek = odblokowany
@@ -37,6 +39,9 @@ public class worldDataGenerator {
         }
 
         saveChunkStates();
+
+        // OD RAZU załaduj bloki dla gracza:
+        blockReconstructor.loadBlocks(player);
     }
 
     private void saveChunkStates() {

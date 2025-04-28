@@ -21,6 +21,7 @@ public class boundaryListener implements Listener {
         if (!world.getName().equalsIgnoreCase(player.getUniqueId().toString())) return;
 
         Block block = loc.getBlock();
+        if(block.getLocation().getY() > 63) return;
         if (block.getType() != Material.WATER) return;
 
         Location center = new Location(world, 8, 0, 8);

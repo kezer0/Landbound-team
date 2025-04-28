@@ -1,114 +1,225 @@
 package me.kezer0.landbound.blocks;
 
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.World;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import me.kezer0.landbound.database.databaseManager;
+import me.kezer0.landbound.utils.signUtil;
+import net.kyori.adventure.text.Component;
+import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.ShulkerBox;
 import org.bukkit.block.Sign;
-import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.block.sign.Side;
+import org.bukkit.entity.ItemFrame;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.BlockInventoryHolder;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BlockStateMeta;
 
-import java.io.File;
-import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class blockDataSaver {
 
-    private static final Map<UUID, Map<String, blockData>> blockBuffer = new HashMap<>();
+    private static final Map<UUID, Map<String, BlockData>> blockBuffer = new ConcurrentHashMap<>();
 
     public static void saveBlock(Block block, Player player) {
         UUID uuid = player.getUniqueId();
         String path = serializeLocation(block);
         Material type = block.getType();
         String customId = null;
+        String itemsJson = null;
 
-        if (block.getState() instanceof Sign sign) {
-            StringBuilder contentBuilder = new StringBuilder();
-            String[] lines = sign.getLines();
+        BlockState state = block.getState();
+//        state.update(true, false);
 
-            for (int i = 0; i < 4; i++) {
-                String line = lines[i] != null ? lines[i] : "";
-                contentBuilder.append(line);
-                if (i < 3) contentBuilder.append(";;");
-            }
-
-            String content = contentBuilder.toString();
+        if (state instanceof Sign sign) {
+            Component[] frontLines = sign.getSide(Side.FRONT).lines().toArray(new Component[0]);
             String color = sign.getColor().name();
-            boolean glowing = sign.isGlowingText();
-
-            customId = "SIGN:" + content + ";color=" + color + ";glowing=" + glowing;
+            boolean glowingFront = sign.getSide(Side.FRONT).isGlowingText();
+            customId = signUtil.serializeSignText(frontLines, color, glowingFront);
         }
 
-        String blockDataString = block.getBlockData().getAsString();
-        blockData data = new blockData(type, blockDataString, customId);
+        if (state instanceof BlockInventoryHolder holder) {
+            ItemStack[] contents = holder.getInventory().getContents();
+            boolean hasItems = false;
+            for (ItemStack item : contents) {
+                if (item != null && !item.getType().isAir()) {
+                    hasItems = true;
+                    Bukkit.getLogger().info("Zapisuję block: " + block.getType() + " itemsJson=" + itemsJson);
+                    break;
+                }
+            }
+            if (hasItems) {
+                itemsJson = serializeInventory(contents);
+            }
+        }
 
+        String blockDataString = state.getBlockData().getAsString();
+
+        BlockData data = new BlockData(block.getLocation(), type, blockDataString, customId, itemsJson);
         blockBuffer.computeIfAbsent(uuid, k -> new HashMap<>()).put(path, data);
     }
+
+
 
     public static void removeBlock(Block block, Player player) {
         UUID uuid = player.getUniqueId();
         String path = serializeLocation(block);
-
-        Bukkit.getLogger().info("Próba usunięcia bloku: " + path);
         blockBuffer.computeIfAbsent(uuid, k -> new HashMap<>()).put(path, null);
-        Bukkit.getLogger().info("Zaznaczono do usunięcia blok: " + path);
     }
 
-    public static void flushBufferToDisk(UUID uuid) {
-        Map<String, blockData> buffer = blockBuffer.get(uuid);
-        if (buffer == null || buffer.isEmpty()) return;
+    public static void updateBlock(Block block) {
+        for (UUID uuid : blockBuffer.keySet()) {
+            Map<String, BlockData> playerBuffer = blockBuffer.get(uuid);
+            if (playerBuffer == null) continue;
 
-        File file = blockDataManager.getBlockDataFile(uuid);
-        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
+            String path = serializeLocation(block);
+            if (playerBuffer.containsKey(path)) {
+                BlockData oldData = playerBuffer.get(path);
+                if (oldData != null) {
+                    BlockState state = block.getState();
+                    state.update(true, false);
 
-        Bukkit.getLogger().info("Zapis danych bloków: " + buffer.size() + " pozycji dla gracza " + uuid);
+                    String customId = oldData.getCustomId();
+                    String items = oldData.getItems();
 
-        for (Map.Entry<String, blockData> entry : buffer.entrySet()) {
-            String key = entry.getKey();
-            blockData data = entry.getValue();
+                    if (state instanceof Sign sign) {
+                        Component[] frontLines = sign.getSide(Side.FRONT).lines().toArray(new Component[0]);
+                        String color = sign.getColor().name();
+                        boolean glowingFront = sign.getSide(Side.FRONT).isGlowingText();
 
-            if (data == null) {
-                config.set(key, null);
-                continue;
-            }
+                        customId = signUtil.serializeSignText(frontLines, color, glowingFront);
+                    }
 
-            Location loc = parseLocationKey(uuid, key);
-            if (loc == null) continue;
-
-            config.set(key + ".type", data.getType().name());
-            config.set(key + ".data", data.getBlockData());
-            config.set(key + ".world", loc.getWorld().getName());
-
-            if (data.getCustomId() != null) {
-                config.set(key + ".custom_id", data.getCustomId());
+                    playerBuffer.put(path, new BlockData(
+                            block.getLocation(),
+                            block.getType(),
+                            block.getBlockData().getAsString(),
+                            customId,
+                            items
+                    ));
+                }
             }
         }
+    }
 
-        try {
-            config.save(file);
-        } catch (IOException e) {
+    private static String serializeInventory(ItemStack[] contents) {
+        JsonArray array = new JsonArray();
+        for (int slot = 0; slot < contents.length; slot++) {
+            ItemStack item = contents[slot];
+            if (item == null || item.getType().isAir()) continue;
+
+            JsonObject obj = new JsonObject();
+            obj.addProperty("slot", slot);
+
+            String customId = getCustomId(item);
+            if (customId != null) {
+                obj.addProperty("customId", customId);
+            } else {
+                obj.addProperty("material", item.getType().name());
+            }
+            obj.addProperty("amount", item.getAmount());
+            array.add(obj);
+        }
+        return array.toString();
+    }
+
+    private static String serializeSingleItem(ItemStack item) {
+        if (item == null || item.getType().isAir()) return "";
+        return serializeItem(item).toString();
+    }
+
+    private static JsonObject serializeItem(ItemStack item) {
+        JsonObject obj = new JsonObject();
+        String customId = getCustomId(item);
+        if (customId != null) {
+            obj.addProperty("customId", customId);
+        } else {
+            obj.addProperty("material", item.getType().name());
+        }
+        obj.addProperty("amount", item.getAmount());
+
+        // Dodajemy obsługę ShulkerBoxów
+        if (item.getItemMeta() instanceof BlockStateMeta bsm && bsm.getBlockState() instanceof ShulkerBox shulker) {
+            ItemStack[] contents = shulker.getInventory().getContents();
+            JsonArray shulkerArray = new JsonArray();
+            for (ItemStack shulkerItem : contents) {
+                if (shulkerItem == null || shulkerItem.getType().isAir()) continue;
+                shulkerArray.add(serializeItem(shulkerItem));
+            }
+            obj.add("shulkerContents", shulkerArray);
+        }
+
+        return obj;
+    }
+
+    private static String getCustomId(ItemStack item) {
+        if (item.hasItemMeta()) {
+            var meta = item.getItemMeta();
+            NamespacedKey key = new NamespacedKey("landbound", "custom_id");
+            if (meta.getPersistentDataContainer().has(key, org.bukkit.persistence.PersistentDataType.STRING)) {
+                return meta.getPersistentDataContainer().get(key, org.bukkit.persistence.PersistentDataType.STRING);
+            }
+        }
+        return null;
+    }
+    public static void flushBufferToDisk(UUID uuid) {
+        Map<String, BlockData> buffer = blockBuffer.get(uuid);
+        if (buffer == null || buffer.isEmpty()) return;
+
+        try (Connection conn = databaseManager.getConnection()) {
+            conn.setAutoCommit(false);
+            PreparedStatement insertStmt = conn.prepareStatement(
+                "INSERT OR REPLACE INTO blocks (uuid, x, y, z, world, type, blockData, customId, items) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+            );
+            PreparedStatement deleteStmt = conn.prepareStatement(
+                "DELETE FROM blocks WHERE uuid = ? AND x = ? AND y = ? AND z = ?"
+            );
+
+            for (Map.Entry<String, BlockData> entry : buffer.entrySet()) {
+                String key = entry.getKey();
+                BlockData data = entry.getValue();
+
+                String[] parts = key.split(",");
+                if (parts.length != 3) continue;
+
+                int x = Integer.parseInt(parts[0]);
+                int y = Integer.parseInt(parts[1]);
+                int z = Integer.parseInt(parts[2]);
+
+                if (data == null) {
+                    deleteStmt.setString(1, uuid.toString());
+                    deleteStmt.setInt(2, x);
+                    deleteStmt.setInt(3, y);
+                    deleteStmt.setInt(4, z);
+                    deleteStmt.addBatch();
+                } else {
+                    Location loc = data.getLocation();
+                    insertStmt.setString(1, uuid.toString());
+                    insertStmt.setInt(2, x);
+                    insertStmt.setInt(3, y);
+                    insertStmt.setInt(4, z);
+                    insertStmt.setString(5, loc.getWorld().getName());
+                    insertStmt.setString(6, data.getType().name());
+                    insertStmt.setString(7, data.getBlockData());
+                    insertStmt.setString(8, data.getCustomId());
+                    insertStmt.setString(9, data.getItems());
+                    insertStmt.addBatch();
+                }
+            }
+
+            deleteStmt.executeBatch();
+            insertStmt.executeBatch();
+            conn.commit();
+        } catch (Exception e) {
             e.printStackTrace();
         }
 
         blockBuffer.remove(uuid);
-    }
-
-    private static Location parseLocationKey(UUID uuid, String key) {
-        String[] parts = key.split(",");
-        if (parts.length != 3) return null;
-
-        try {
-            int x = Integer.parseInt(parts[0]);
-            int y = Integer.parseInt(parts[1]);
-            int z = Integer.parseInt(parts[2]);
-            World world = Bukkit.getWorld(uuid.toString());
-            if (world == null) return null;
-            return new Location(world, x, y, z);
-        } catch (NumberFormatException e) {
-            return null;
-        }
     }
 
     public static void flushAll() {
@@ -120,16 +231,23 @@ public class blockDataSaver {
     private static String serializeLocation(Block block) {
         return block.getX() + "," + block.getY() + "," + block.getZ();
     }
-
-    public static class blockData {
+    public static class BlockData {
+        private final Location location;
         private final Material type;
         private final String blockData;
         private final String customId;
+        private final String items; // Dodane
 
-        public blockData(Material type, String blockData, String customId) {
+        public BlockData(Location location, Material type, String blockData, String customId, String items) {
+            this.location = location;
             this.type = type;
             this.blockData = blockData;
             this.customId = customId;
+            this.items = items;
+        }
+
+        public Location getLocation() {
+            return location;
         }
 
         public Material getType() {
@@ -142,6 +260,10 @@ public class blockDataSaver {
 
         public String getCustomId() {
             return customId;
+        }
+
+        public String getItems() {
+            return items;
         }
     }
 }

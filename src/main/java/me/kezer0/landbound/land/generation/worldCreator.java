@@ -22,7 +22,7 @@ public class worldCreator implements Listener {
     public static void createIslandWorld(Player player) {
         String worldName = player.getUniqueId().toString();
         UUID uuid = player.getUniqueId();
-        // Jeśli świat już istnieje, nie rób nic
+
         if (Bukkit.getWorld(worldName) != null) return;
 
         org.bukkit.WorldCreator wc = new org.bukkit.WorldCreator(worldName)
@@ -31,13 +31,18 @@ public class worldCreator implements Listener {
                 .type(WorldType.FLAT)
                 .generatorSettings("{\"layers\": [{\"block\": \"air\", \"height\": 256}], \"biome\": \"plains\"}");
 
-
         World world = Bukkit.createWorld(wc);
         world.setSpawnLocation(0, BASE_Y + 1, 0);
         world.setTime(TIME);
 
         generateInitialChunks(world, player);
         blockReconstructor.loadBlocks(player);
+
+        // TELEPORT gracza na środek wyspy
+        Location spawn = new Location(world, 0.5, BASE_Y + 5, 0.5);
+        player.teleport(spawn);
+        player.setGameMode(GameMode.SURVIVAL);
+
         Bukkit.getLogger().warning("ENDED WORLD CREAING");
     }
 
@@ -46,7 +51,7 @@ public class worldCreator implements Listener {
         worldDataGenerator generator = new worldDataGenerator(player, islandFile);
 
         if (worldDataGenerator.isIslandFileEmpty(islandFile)) {
-            generator.generateIslandData();
+            generator.generateIslandData(player);
             generator.saveToConfig();
         }
 
@@ -80,7 +85,6 @@ public class worldCreator implements Listener {
         int worldX = (cx - 3) * 16;
         int worldZ = (cz - 3) * 16;
 
-        // Ustawienie biomu
         Biome biome;
         try {
             biome = Biome.valueOf(biomeName.toUpperCase());
@@ -94,14 +98,12 @@ public class worldCreator implements Listener {
             }
         }
 
-        // Fundament
         for (int x = 0; x < 16; x++) {
             for (int z = 0; z < 16; z++) {
                 world.getBlockAt(worldX + x, BASE_Y, worldZ + z).setType(Material.DIRT);
             }
         }
 
-        // Warstwy nad fundamentem
         Material topMaterial = unlocked ? Material.GRASS_BLOCK : Material.WATER;
         for (int y = BASE_Y + 1; y < BASE_Y + 5; y++) {
             for (int x = 0; x < 16; x++) {

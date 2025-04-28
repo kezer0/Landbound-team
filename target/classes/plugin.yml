@@ -15,3 +15,14 @@ commands:
     usage: "/hub"
     permission: "permission.node"
     permission-message: "You do not have permission to use this command"
+  debugitem:
+    description: "teleports you to hub"
+    usage: "/debugitem <args>"
+    permission: "permission.node"
+    permission-message: "You do not have permission to use this command"
+  testitem:
+    description: "teleports you to hub"
+    usage: "/testitem"
+    permission: "permission.node"
+    permission-message: "You do not have permission to use this command"
+

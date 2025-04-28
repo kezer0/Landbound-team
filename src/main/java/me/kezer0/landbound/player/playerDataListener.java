@@ -1,14 +1,13 @@
 package me.kezer0.landbound.player;
 
 import me.kezer0.landbound.blocks.blockDataSaver;
-import me.kezer0.landbound.land.generation.worldCreator;
-import me.kezer0.landbound.land.generation.worldDataGenerator;
+import me.kezer0.landbound.database.databaseManager;
+import me.kezer0.landbound.database.itemDatabaseManager;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 import java.io.File;
@@ -17,60 +16,22 @@ import java.util.UUID;
 
 public class playerDataListener implements Listener {
 
-    public static final File playersRootFolder = new File(Bukkit.getPluginsFolder(), "LandBound/players");
-
-    static {
-        if (!playersRootFolder.exists()) {
-            playersRootFolder.mkdirs();
-        }
-    }
+    // Zwraca główny folder danych graczy
     public static File getPlayersRootFolder() {
-        return playersRootFolder;
-    }
-
-    @EventHandler
-    public void onPlayerJoin(PlayerJoinEvent event) {
-        Player player = event.getPlayer();
-        UUID uuid = player.getUniqueId();
-
-        File playerFolder = new File(playersRootFolder, uuid.toString());
-        File playerFile = new File(playerFolder, "player.yml");
-        File islandFile = new File(playerFolder, "island.yml");
-
-        if (!playerFolder.exists()) {
-            playerFolder.mkdirs();
+        File folder = new File(Bukkit.getPluginManager().getPlugin("Landbound").getDataFolder(), "players");
+        if (!folder.exists()) {
+            folder.mkdirs();
         }
-
-        try {
-            if (!playerFile.exists()) playerFile.createNewFile();
-            if (!islandFile.exists()) islandFile.createNewFile();
-        } catch (IOException e) {
-            Bukkit.getLogger().severe("[LandBound] Błąd przy tworzeniu plików danych gracza: " + e.getMessage());
-            e.printStackTrace();
-        }
-
-        worldCreator.createIslandWorld(player);
+        return folder;
     }
 
-    @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent event) {
-        Player player = event.getPlayer();
-        UUID uuid = player.getUniqueId();
-
-        File islandFile = new File(playersRootFolder, uuid + "/island.yml");
-        worldDataGenerator generator = new worldDataGenerator(player, islandFile);
-
-        generator.saveToConfig();
-        blockDataSaver.flushBufferToDisk(uuid);
-        unloadAndDeleteWorld(player);
-    }
-
+    // Nowa poprawiona metoda do odładowywania i usuwania świata gracza
     public static void unloadAndDeleteWorld(Player player) {
         World world = Bukkit.getWorld(player.getUniqueId().toString());
 
         if (world == null) return;
 
-        // Teleportujemy wszystkich graczy do domyślnego świata
+        // Teleportujemy wszystkich graczy do spawnpointa
         for (Player p : world.getPlayers()) {
             p.teleport(Bukkit.getWorlds().get(0).getSpawnLocation());
         }
@@ -111,5 +72,13 @@ public class playerDataListener implements Listener {
         if (!folder.delete()) {
             throw new IOException("Nie można usunąć folderu: " + folder.getAbsolutePath());
         }
+    }
+    @EventHandler
+    private void onPlayerQuit(PlayerQuitEvent e){
+        Player player = e.getPlayer();
+        UUID uuid = player.getUniqueId();
+        blockDataSaver.flushBufferToDisk(uuid);
+        unloadAndDeleteWorld(player);
+        databaseManager.close();
     }
 }

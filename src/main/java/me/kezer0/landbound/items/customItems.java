@@ -17,14 +17,15 @@ public class customItems {
         return Arrays.asList(createExampleItem());
     }
 
-    private static ItemStack createExampleItem() {
+    public static ItemStack createExampleItem() {
         ItemStack item = new ItemStack(Material.DIAMOND_SWORD);
         ItemMeta meta = item.getItemMeta();
+
         String displayName = "§bExcalibur";
         meta.setDisplayName(displayName);
 
-        // Generujemy i przypisujemy ID do persistentDataContainer
-        String id = generateId(item, displayName);
+        // Wygeneruj i przypisz custom ID
+        String id = generateId(item.getType(), displayName);
         NamespacedKey key = new NamespacedKey(plugin, "custom_id");
         meta.getPersistentDataContainer().set(key, org.bukkit.persistence.PersistentDataType.STRING, id);
 
@@ -45,8 +46,8 @@ public class customItems {
         }
     }
 
-    private static String generateId(ItemStack item, String displayName) {
-        String base = item.getType().name();
+    public static String generateId(Material material, String displayName) {
+        String base = material.name();
         String name = displayName != null ? displayName.replaceAll("§.", "").replace(" ", "_") : "default";
         return base.toLowerCase() + "_" + name.toLowerCase();
     }
