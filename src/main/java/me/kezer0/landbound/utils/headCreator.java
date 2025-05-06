@@ -14,6 +14,7 @@ import com.mojang.authlib.properties.Property;
 public class headCreator {
 
     public static ItemStack getCustomHead(String base64Texture, String name, List<String> lore) {
+
         ItemStack head = new ItemStack(Material.PLAYER_HEAD);
         SkullMeta meta = (SkullMeta) head.getItemMeta();
 

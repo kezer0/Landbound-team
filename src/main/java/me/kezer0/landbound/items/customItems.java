@@ -24,7 +24,6 @@ public class customItems {
         String displayName = "§bExcalibur";
         meta.setDisplayName(displayName);
 
-        // Wygeneruj i przypisz custom ID
         String id = generateId(item.getType(), displayName);
         NamespacedKey key = new NamespacedKey(plugin, "custom_id");
         meta.getPersistentDataContainer().set(key, org.bukkit.persistence.PersistentDataType.STRING, id);

@@ -10,8 +10,9 @@ import java.sql.*;
 import java.util.UUID;
 
 public class playerDataManager {
-
+//W PÓŹNIEJSZYM UŻYDKU
     public static void handlePlayerJoin(Player player) {
+
         UUID uuid = player.getUniqueId();
         File playerFolder = new File("plugins/LandBound/players/" + uuid);
         File islandFile = new File(playerFolder, "island.yml");
@@ -20,14 +21,15 @@ public class playerDataManager {
             playerFolder.mkdirs();
         }
 
-        // Jeśli nie ma pliku wyspy, to go tworzymy razem ze światem
+
         if (!islandFile.exists()) {
             Bukkit.getLogger().info("[LandBound] Tworzenie świata wyspy dla gracza " + player.getName());
             worldCreator.createIslandWorld(player);
         } else {
-            // Jeśli istnieje, sprawdzamy czy świat jest załadowany
+
             if (Bukkit.getWorld(uuid.toString()) == null) {
-                worldCreator.createIslandWorld(player); // załadowanie i odbudowa bloków
+
+                worldCreator.createIslandWorld(player);
             }
         }
     }
@@ -44,6 +46,7 @@ public class playerDataManager {
 
         try (Connection conn = databaseHelper.getConnection();
              Statement stmt = conn.createStatement()) {
+
             stmt.execute(sql);
         } catch (SQLException e) {
             e.printStackTrace();
@@ -51,6 +54,7 @@ public class playerDataManager {
     }
 
     public static void createPlayerIfNotExists(UUID uuid) {
+
         String checkSql = "SELECT uuid FROM players WHERE uuid = ?";
         String insertSql = "INSERT INTO players (uuid) VALUES (?)";
 
@@ -61,7 +65,9 @@ public class playerDataManager {
             ResultSet rs = checkStmt.executeQuery();
 
             if (!rs.next()) {
+
                 try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
+
                     insertStmt.setString(1, uuid.toString());
                     insertStmt.executeUpdate();
                 }
@@ -72,6 +78,7 @@ public class playerDataManager {
     }
 
     public static void savePlayerData(UUID uuid, double balance, int level, double experience) {
+
         String sql = "UPDATE players SET balance = ?, level = ?, experience = ? WHERE uuid = ?";
 
         try (Connection conn = databaseHelper.getConnection();
@@ -100,13 +107,16 @@ public class playerDataManager {
     }
 
     private static double getDouble(UUID uuid, String column) {
+
         String sql = "SELECT " + column + " FROM players WHERE uuid = ?";
+
         try (Connection conn = databaseHelper.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, uuid.toString());
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
+
                 return rs.getDouble(column);
             }
         } catch (SQLException e) {
@@ -116,13 +126,16 @@ public class playerDataManager {
     }
 
     private static int getInt(UUID uuid, String column) {
+
         String sql = "SELECT " + column + " FROM players WHERE uuid = ?";
+
         try (Connection conn = databaseHelper.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
             stmt.setString(1, uuid.toString());
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
+
                 return rs.getInt(column);
             }
         } catch (SQLException e) {

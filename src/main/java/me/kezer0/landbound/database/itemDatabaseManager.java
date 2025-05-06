@@ -42,9 +42,11 @@ public class itemDatabaseManager {
     public static Map<String, ItemStack> loadAllItems() {
         Map<String, ItemStack> items = new HashMap<>();
         String sql = "SELECT id, material, displayName FROM items;";
+
         try (Connection conn = databaseManager.getConnection();
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
+
             while (rs.next()) {
                 String id = rs.getString("id");
                 Material material = Material.getMaterial(rs.getString("material"));

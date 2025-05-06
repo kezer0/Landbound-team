@@ -1,6 +1,7 @@
 package me.kezer0.landbound.land.generation;
 
-import me.kezer0.landbound.blocks.blockReconstructor;
+import me.kezer0.landbound.land.blocks.blockReconstructor;
+import me.kezer0.landbound.land.entity.entityReconstructor;
 import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.configuration.ConfigurationSection;
@@ -11,17 +12,15 @@ import org.bukkit.event.Listener;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class worldCreator implements Listener {
 
     private static final int TIME = 6000;
     private static final int BASE_Y = 59;
-    private static final int GRID_SIZE = 7;
+    private static final int GRID_SIZE = 9;
 
     public static void createIslandWorld(Player player) {
         String worldName = player.getUniqueId().toString();
-        UUID uuid = player.getUniqueId();
 
         if (Bukkit.getWorld(worldName) != null) return;
 
@@ -37,9 +36,9 @@ public class worldCreator implements Listener {
 
         generateInitialChunks(world, player);
         blockReconstructor.loadBlocks(player);
+        entityReconstructor.loadAllEntities();
 
-        // TELEPORT gracza na środek wyspy
-        Location spawn = new Location(world, 0.5, BASE_Y + 5, 0.5);
+        Location spawn = new Location(world, 8, BASE_Y + 5, 8);
         player.teleport(spawn);
         player.setGameMode(GameMode.SURVIVAL);
 

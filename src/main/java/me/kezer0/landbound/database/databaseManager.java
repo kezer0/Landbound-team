@@ -24,30 +24,41 @@ public class databaseManager {
         Bukkit.getLogger().info("[LandBound] Połączono z bazą danych SQLite!");
     }
 
-    private static void createTables() throws SQLException {
-        String sql = """
-            CREATE TABLE IF NOT EXISTS blocks (
-                uuid TEXT NOT NULL,
-                x INTEGER NOT NULL,
-                y INTEGER NOT NULL,
-                z INTEGER NOT NULL,
-                world TEXT NOT NULL,
-                type TEXT NOT NULL,
-                blockData TEXT NOT NULL,
-                customId TEXT,
-                items TEXT,
-                PRIMARY KEY (uuid, x, y, z)
-            );
-        """;
-
+   private static void createTables() throws SQLException {
         try (Statement stmt = connection.createStatement()) {
-            stmt.execute(sql);
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS blocks (
+                    uuid TEXT NOT NULL,
+                    x INTEGER NOT NULL,
+                    y INTEGER NOT NULL,
+                    z INTEGER NOT NULL,
+                    world TEXT NOT NULL,
+                    type TEXT NOT NULL,
+                    blockData TEXT NOT NULL,
+                    customId TEXT,
+                    items TEXT,
+                    PRIMARY KEY (uuid, x, y, z)
+                );
+            """);
+
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS entities (
+                    world TEXT,
+                    x INTEGER,
+                    y INTEGER,
+                    z INTEGER,
+                    entityType TEXT,
+                    data TEXT,
+                    items TEXT,
+                    PRIMARY KEY (x, y, z, entityType)
+                );
+            """);
         }
     }
 
     private static void alterTablesIfNeeded() {
         try (Statement stmt = connection.createStatement()) {
-            // Sprawdzamy czy kolumna 'items' istnieje
+
             ResultSet rs = stmt.executeQuery("PRAGMA table_info(blocks);");
             boolean hasItemsColumn = false;
 

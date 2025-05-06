@@ -28,11 +28,13 @@ public class signUtil {
     }
 
     public static void deserializeSignText(Sign sign, String customId) {
+
         if (customId == null || !customId.startsWith("SIGN:")) return;
 
         String jsonPart = customId.substring(5);
 
         try {
+
             JsonObject obj = com.google.gson.JsonParser.parseString(jsonPart).getAsJsonObject();
 
             JsonArray front = obj.getAsJsonArray("front");
@@ -40,13 +42,17 @@ public class signUtil {
             boolean glowingFront = obj.get("glowing").getAsBoolean();
 
             for (int i = 0; i < 4; i++) {
+
                 String frontText = front.get(i).getAsString();
                 Component frontLine = gson.deserialize(frontText);
                 sign.getSide(Side.FRONT).line(i, frontLine);
+
             }
 
             try {
+
                 sign.setColor(DyeColor.valueOf(color));
+
             } catch (IllegalArgumentException ignored) {}
 
             sign.getSide(Side.FRONT).setGlowingText(glowingFront);
