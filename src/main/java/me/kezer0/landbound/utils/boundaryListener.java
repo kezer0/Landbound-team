@@ -7,6 +7,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockFromToEvent;
 import org.bukkit.event.player.PlayerBucketFillEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.ItemStack;
 
@@ -18,7 +19,6 @@ public class boundaryListener implements Listener {
         Player player = e.getPlayer();
         Location loc = player.getLocation();
         World world = player.getWorld();
-
         if (!world.getName().equalsIgnoreCase(player.getUniqueId().toString())) return;
 
         Block block = loc.getBlock();
@@ -45,17 +45,25 @@ public class boundaryListener implements Listener {
         if (e.getBlock().getType() == Material.WATER) {
 
             e.setCancelled(true);
+    public void onWaterSpread(BlockFromToEvent event) {
+        World world = event.getBlock().getWorld();
+        if(world.getName().equals("world") || world.getName().equals("world_nether") || world.getName().equals("world_end")) return;
+        if (event.getBlock().getType() == Material.WATER) {
+            event.setCancelled(true);
         }
     }
     @EventHandler
     public void onPlayerBucketFill(PlayerBucketFillEvent e) {
+
 
         Player player = e.getPlayer();
 
         if (e.getBlockClicked().getType() == Material.WATER) {
 
             if (player.getInventory().getItemInMainHand().getType() == Material.BUCKET) {
-
+        Player player = e.getPlayer();
+        if (e.getBlockClicked().getType() == Material.WATER) {
+            if (player.getInventory().getItemInMainHand().getType() == Material.BUCKET) {
                 ItemStack waterBucket = new ItemStack(Material.WATER_BUCKET);
                 player.getInventory().setItemInMainHand(waterBucket);
                 e.getBlockClicked().setType(Material.WATER);
