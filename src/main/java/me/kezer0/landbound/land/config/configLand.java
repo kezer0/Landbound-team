@@ -1,4 +1,4 @@
-package me.kezer0.landbound.land;
+package me.kezer0.landbound.land.config;
 
 import me.kezer0.landbound.utils.CColor;
 import org.bukkit.Bukkit;
@@ -11,9 +11,6 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import me.kezer0.landbound.utils.worldGenerator;
-import me.kezer0.landbound.utils.worldCreator;
-import me.kezer0.landbound.player.configPlayer;
 
 import java.util.*;
 
@@ -46,7 +43,6 @@ public class configLand implements Listener {
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e){
         if(!(e.getWhoClicked() instanceof Player player)) return;
-        player.sendMessage("dziala");
         UUID uuid = player.getUniqueId();
         Inventory inv = e.getInventory();
         if(!creatorInventories.containsKey(uuid) || !creatorInventories.get(uuid).equals(inv)) return;
@@ -65,8 +61,7 @@ public class configLand implements Listener {
         Player player = (Player) e.getPlayer();
         Inventory inv = e.getInventory();
 
-
-        if (creatorInventories.containsKey(player.getUniqueId()) && creatorInventories.get(player.getUniqueId()).equals(inv)) {
+        if(creatorInventories.containsKey(player.getUniqueId()) && creatorInventories.get(player.getUniqueId()).equals(inv)) {
             player.sendMessage(ChatColor.RED + "Zamknąłeś GUI!");
             creatorInventories.remove(player.getUniqueId());
         }

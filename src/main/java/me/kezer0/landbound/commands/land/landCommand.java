@@ -1,9 +1,7 @@
-package me.kezer0.landbound.commands;
+package me.kezer0.landbound.commands.land;
 
-import me.kezer0.landbound.land.configLand;
-import me.kezer0.landbound.player.configPlayer;
-import me.kezer0.landbound.utils.worldCreator;
-import me.kezer0.landbound.utils.worldGenerator;
+import me.kezer0.landbound.land.config.configLand;
+import me.kezer0.landbound.land.generation.worldCreator;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.command.Command;
@@ -28,23 +26,17 @@ public class landCommand implements CommandExecutor {
         Player player = (Player) sender;
         String worldName = player.getUniqueId().toString();
         World world = Bukkit.getWorld(worldName);
-
-        // Jeśli gracz używa /land configLand
-        if (args.length == 1 && args[0].equalsIgnoreCase("configLand")) {
+        if (args.length == 1 && args[0].equalsIgnoreCase("config")) {
             configLand.createorInventory(player);
             return true;
         }
-
-        // Jeśli świat już istnieje, teleportuj
         if (world != null) {
             player.teleport(world.getSpawnLocation());
             player.sendMessage("Teleportowano na Twoją wyspę!");
             return true;
         }
-
-        // Jeśli świat jeszcze nie istnieje – rozpocznij tworzenie
         player.sendMessage("Tworzenie Twojej wyspy, proszę wpisać /land jeszcze raz po chwili...");
-        worldCreator.createWorld(player);
+        worldCreator.createIslandWorld(player);
         return true;
     }
 }
