@@ -1,6 +1,7 @@
 
-package me.kezer0.landbound;
+package me.kezer0.landbound.items;
 
+import org.bukkit.inventory.ItemFlag;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
@@ -24,17 +25,22 @@ public class FrostMace implements Listener {
         ItemStack frostmace = new ItemStack(Material.MACE);
         ItemMeta meta = frostmace.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName(ChatColor.BLUE + "" + ChatColor.BOLD + "Lodowy Topór");
-            meta.addEnchant(Enchantment.DAMAGE_ALL, 3, true); 
+            meta.setDisplayName(ChatColor.BLUE + "" + ChatColor.BOLD + "LODOWY TOPÓR");
+            meta.addEnchant(Enchantment.SHARPNESS, 3, true); 
             meta.setLore(List.of(
-                ChatColor.LIGHT_BLUE + "RARE",
-                ChatColor.GRAY + "Topór wykuty z lodu pradawnych krain.",
-                ChatColor.GRAY + "Cios nim może przynieść przewagę w walce.",
+                ChatColor.AQUA + "RARE",
+                ChatColor.GRAY + "Topór wykuty z lodu",
+                ChatColor.GRAY + "Cios nim może przynieść przewagę w walce",
                 "",
                 ChatColor.GREEN + "Funkcje Specjalne:",
                 ChatColor.AQUA + "- 15% szansy na nałożenie " + ChatColor.DARK_PURPLE + "Oslabienia I" + ChatColor.AQUA + " na 5 sekund",
                 ChatColor.AQUA + "- Szybkość I przez 3 sekundy po trafieniu"
             ));
+
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+
             frostmace.setItemMeta(meta);
         }
         return frostmace;
@@ -51,10 +57,9 @@ public class FrostMace implements Listener {
                     && item.getItemMeta().hasDisplayName()
                     && item.getItemMeta().getDisplayName().equals(ChatColor.BLUE + "" + ChatColor.BOLD + "Lodowy Topór")) {
 
-                
+
                 player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 60, 0)); // 3 sekundy
 
-                // 15% szansy na osłabienie przeciwnika
                 if (new Random().nextDouble() <= 0.15) {
                     target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, 100, 0)); // 5 sekund Weakness I
                 }

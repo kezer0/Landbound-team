@@ -1,4 +1,4 @@
-package me.kezer0.landbound;
+package me.kezer0.landbound.gui;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -38,13 +38,13 @@ public class TradeGUI implements Listener, CommandExecutor {
 
        
         ItemStack acceptItem = new ItemStack(Material.GREEN_WOOL);
-        tradeInventory.setItem(45, acceptItem); // Slot dla Gracza 1
-        tradeInventory.setItem(53, acceptItem); // Slot dla Gracza 2
+        tradeInventory.setItem(45, acceptItem); 
+        tradeInventory.setItem(53, acceptItem); 
 
         // Sloty anulowania dla obu graczy
         ItemStack cancelItem = new ItemStack(Material.RED_WOOL);
-        tradeInventory.setItem(46, cancelItem); // Slot dla Gracza 1
-        tradeInventory.setItem(52, cancelItem); // Slot dla Gracza 2
+        tradeInventory.setItem(46, cancelItem); 
+        tradeInventory.setItem(52, cancelItem);
 
         return tradeInventory;
     }
@@ -129,11 +129,7 @@ public class TradeGUI implements Listener, CommandExecutor {
         }
     }
 
-    /**
-     * Zamyka GUI wymiany dla wszystkich graczy uczestniczących w wymianie.
-     *
-     * @param inventory Inventory do zamknięcia
-     */
+    
     private void closeTrade(Inventory inventory) {
         for (UUID uuid : tradeInventories.keySet()) {
             if (tradeInventories.get(uuid).equals(inventory)) {

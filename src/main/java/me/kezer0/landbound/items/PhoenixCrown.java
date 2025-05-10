@@ -1,9 +1,12 @@
-package me.kezer0.landbound;
+package me.kezer0.landbound.items;
 
-import org.bukkit.entity.Entity;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,7 +19,6 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.attribute.Attribute;
 
 import java.util.List;
 
@@ -27,26 +29,29 @@ public class PhoenixCrown implements Listener {
     private static final long DAMAGE_BOOST_COOLDOWN = 60000; // 1 minuta na zwiększenie obrażeń
     private static final long CLEANSE_COOLDOWN = 60000; // 1 minuta na usunięcie negatywnych efektów
 
-    /**
-     * @return ItemStack reprezentujący Koronę Feniksa
-     */
+
     public static ItemStack createPhoenixCrown() {
         ItemStack phoenixCrown = new ItemStack(Material.NETHERITE_HELMET);
         ItemMeta meta = phoenixCrown.getItemMeta();
         if (meta != null) {
-            meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "Korona Feniksa"); 
+            meta.setDisplayName(ChatColor.GOLD + "" + ChatColor.BOLD + "KORONA FENIKSA");
 
-            meta.addEnchant(Enchantment.PROTECTION_FIRE, 4, true); 
+            meta.addEnchant(Enchantment.FIRE_PROTECTION, 4, true);
             meta.setLore(List.of(
-                ChatColor.YELLOW + "LEGENDARY",
-                ChatColor.GRAY + "Korona Feniksa posiada niezwykłe moce.",
-                "", 
-                ChatColor.GREEN + "Funkcje Specjalne:",
-                ChatColor.ORANGE + "Odrodzenie",
-                ChatColor.ORANGE + "Regeneracja",
-                ChatColor.ORANGE + "Zwiększenie Obrażeń",
-                ChatColor.ORANGE + "Usuwanie Negatywnych Efektów"
+                    ChatColor.YELLOW + "LEGENDARY",
+                    ChatColor.GRAY + "Korona Feniksa posiada niezwykłe moce.",
+                    "",
+                    ChatColor.GOLD + "- Funkcje Specjalne:",
+                    ChatColor.GOLD + "- Odrodzenie",
+                    ChatColor.GOLD + "- Regeneracja",
+                    ChatColor.GOLD + "- Zwiększenie Obrażeń",
+                    ChatColor.GOLD + "- Usuwanie Negatywnych Efektów"
             ));
+
+        meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+        meta.addItemFlags(ItemFlag.HIDE_UNBREAKABLE);
+        meta.addItemFlags(ItemFlag.HIDE_ATTRIBUTES);
+
             phoenixCrown.setItemMeta(meta);
         }
         return phoenixCrown;
@@ -58,25 +63,28 @@ public class PhoenixCrown implements Listener {
         Entity damager = event.getDamager();
         Entity damaged = event.getEntity();
 
-        if (damager instanceof Player player && damaged instanceof LivingEntity livingEntity) {
+        if (damager instanceof Player && damaged instanceof LivingEntity) {
+            Player player = (Player) damager;
+            LivingEntity livingEntity = (LivingEntity) damaged;
+
             ItemStack itemInHand = player.getInventory().getItemInMainHand();
 
-            // Sprawdź, czy gracz używa Korony Feniksa
             if (itemInHand.hasItemMeta() && itemInHand.getItemMeta().hasDisplayName() &&
-                itemInHand.getItemMeta().getDisplayName().equals(ChatColor.ORANGE + "Korona Feniksa")) {
+                    itemInHand.getItemMeta().getDisplayName().equals(ChatColor.GOLD + "" + ChatColor.BOLD + "Korona Feniksa")) {
 
                 // Zwiększenie regeneracji
                 new BukkitRunnable() {
                     @Override
                     public void run() {
-                        player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 120, 2)); // Regeneracja 2 przez 6 sekund
+                        player.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 120, 2));
                     }
-                }.runTaskLater(Bukkit.getPluginManager().getPlugin("YourPluginName"), REGENERATION_COOLDOWN);
+                }.runTaskLater(Bukkit.getPluginManager().getPlugin("LandBound"), REGENERATION_COOLDOWN / 50); // /50 bo czas w tickach
 
                 // Wzmocnienie obrażeń - bonus do obrażeń poniżej 50% zdrowia
                 if (player.getHealth() < player.getMaxHealth() / 2) {
-                    double bonusDamage = player.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getValue() * 0.1;
-                    player.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(player.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getValue() + bonusDamage);
+                    double currentDamage = player.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).getBaseValue();
+                    double bonusDamage = currentDamage * 0.1;
+                    player.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE).setBaseValue(currentDamage + bonusDamage);
                 }
             }
         }
@@ -85,50 +93,62 @@ public class PhoenixCrown implements Listener {
     // Funkcja odrodzenia gracza po śmierci
     @EventHandler
     public void onPlayerDeath(EntityDeathEvent event) {
+        if (!(event.getEntity() instanceof Player)) return;
         Player player = (Player) event.getEntity();
 
         ItemStack itemInHead = player.getInventory().getHelmet();
 
-        if (itemInHead != null && itemInHead.hasItemMeta() && 
-            itemInHead.getItemMeta().getDisplayName().equals(ChatColor.ORANGE + "Korona Feniksa")) {
+        if (itemInHead != null && itemInHead.hasItemMeta() &&
+                itemInHead.getItemMeta().getDisplayName().equals(ChatColor.GOLD + "" + ChatColor.BOLD + "Korona Feniksa")) {
 
-            // Funkcja odrodzenia
             new BukkitRunnable() {
                 @Override
                 public void run() {
                     if (player.getHealth() <= 0) {
                         player.setHealth(player.getMaxHealth());
-                        player.teleport(player.getLocation()); // Odrodzenie w miejscu śmierci
+                        player.teleport(player.getLocation());
                     }
                 }
-            }.runTaskLater(Bukkit.getPluginManager().getPlugin("LandBound"), 100L); // Odrodzenie po 5 sekundach
+            }.runTaskLater(Bukkit.getPluginManager().getPlugin("LandBound"), 100L);
 
-            // Anulowanie upuszczenia przedmiotów
             event.getDrops().clear();
         }
     }
 
-    // Funkcja usuwania negatywnych efektów co minutę
-    @EventHandler
-    public void onPlayerInteract(PlayerInteractEvent event) {
-        Player player = event.getPlayer();
-        ItemStack itemInHead = player.getInventory().getHelmet();
+   
+@EventHandler
+public void onPlayerInteract(PlayerInteractEvent event) {
+    Player player = event.getPlayer();
+    ItemStack itemInHead = player.getInventory().getHelmet();  
 
-        if (itemInHead != null && itemInHead.hasItemMeta() && 
-            itemInHead.getItemMeta().getDisplayName().equals(ChatColor.ORANGE + "Korona Feniksa")) {
-
-            // Usuwanie mrocznych efektów co minutę
-            new BukkitRunnable() {
-                @Override
-                public void run() {
-                    for (PotionEffect effect : player.getActivePotionEffects()) {
-                        if (effect.getType().isBad()) { // Sprawdź, czy efekt jest negatywny
-                            player.removePotionEffect(effect.getType()); // Usuń negatywne efekty
-                        }
+    // Sprawdzamy, czy gracz ma hełm i czy ma odpowiednią nazwę
+    if (itemInHead != null && itemInHead.hasItemMeta() &&
+            itemInHead.getItemMeta().getDisplayName().equals("Korona Feniksa")) {  
+        new BukkitRunnable() {
+            @Override
+            public void run() {
+                // Przechodzimy przez aktywne efekty gracza
+                for (PotionEffect effect : player.getActivePotionEffects()) {
+                    // Sprawdzamy, czy efekt jest negatywny (np. zatrucie, osłabienie)
+                    if (isNegativeEffect(effect.getType())) {
+                        player.removePotionEffect(effect.getType());  
                     }
                 }
-            }.runTaskLater(Bukkit.getPluginManager().getPlugin("LandBound"), CLEANSE_COOLDOWN);
-        }
-    }
+            }
+        }.runTaskLater(Bukkit.getPluginManager().getPlugin("LandBound"), 20L);  
 }
 
+// Metoda pomocnicza do sprawdzania, czy efekt jest negatywny
+private boolean isNegativeEffect(PotionEffectType effectType) {
+    // Lista negatywnych efektów
+    return effectType == PotionEffectType.POISON ||
+           effectType == PotionEffectType.WITHER ||
+           effectType == PotionEffectType.SLOWNESS ||
+           effectType == PotionEffectType.MINING_FATIGUE ||
+           effectType == PotionEffectType.BLINDNESS ||
+           effectType == PotionEffectType.NAUSEA ||
+           effectType == PotionEffectType.INSTANT_DAMAGE ||
+           effectType == PotionEffectType.WEAKNESS ||
+           effectType == PotionEffectType.BAD_OMEN;
+           }
+   }

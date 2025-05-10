@@ -1,4 +1,4 @@
-package me.kezer0.landbound;
+package me.kezer0.landbound.gui;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -15,10 +15,11 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public class SwordModeGUI implements Listener, CommandExecutor {
+public class MythicSModesGUI implements Listener, CommandExecutor {
 
     private static final Map<UUID, String> playerModes = new HashMap<>(); // Przechowuje tryb gracza
 
@@ -26,47 +27,18 @@ public class SwordModeGUI implements Listener, CommandExecutor {
     private Inventory createModeSelectionGUI() {
         Inventory gui = Bukkit.createInventory(null, 9, ChatColor.DARK_PURPLE + "Wybierz Tryb");
 
-        // Item dla trybu Strateg
-        ItemStack strategItem = new ItemStack(Material.IRON_SWORD);
-        ItemMeta strategMeta = strategItem.getItemMeta();
-        if (strategMeta != null) {
-            strategMeta.setDisplayName(ChatColor.YELLOW + "Tryb Strateg");
-            strategMeta.setLore(List.of(ChatColor.GRAY + "Zwiększa obrażenia o 20%."));
-            strategItem.setItemMeta(strategMeta);
-        }
+        ItemStack strategItem = createGuiItem(Material.IRON_SWORD, ChatColor.YELLOW + "Tryb Strateg", "Zwiększa obrażenia o 20%.");
 
-        // Item dla trybu Mistrz Kontroli
-        ItemStack controlItem = new ItemStack(Material.SHIELD);
-        ItemMeta controlMeta = controlItem.getItemMeta();
-        if (controlMeta != null) {
-            controlMeta.setDisplayName(ChatColor.YELLOW + "Mistrz Kontroli");
-            controlMeta.setLore(List.of(ChatColor.GRAY + "Odporność na efekty statusu przez 10s."));
-            controlItem.setItemMeta(controlMeta);
-        }
+        ItemStack controlItem = createGuiItem(Material.SHIELD, ChatColor.YELLOW + "Mistrz Kontroli", "Odporność na efekty statusu przez 10s.");
 
-        // Item dla trybu Regeneracja
-        ItemStack regenItem = new ItemStack(Material.GOLDEN_APPLE);
-        ItemMeta regenMeta = regenItem.getItemMeta();
-        if (regenMeta != null) {
-            regenMeta.setDisplayName(ChatColor.YELLOW + "Tryb Regeneracji");
-            regenMeta.setLore(List.of(ChatColor.GRAY + "Regeneracja 1 przez 5s."));
-            regenItem.setItemMeta(regenMeta);
-        }
+        ItemStack regenItem = createGuiItem(Material.GOLDEN_APPLE, ChatColor.YELLOW + "Tryb Regeneracji", "Regeneracja 1 przez 5s.");
 
-        // Item dla trybu Moc Cienia
-        ItemStack shadowItem = new ItemStack(Material.ENDER_PEARL);
-        ItemMeta shadowMeta = shadowItem.getItemMeta();
-        if (shadowMeta != null) {
-            shadowMeta.setDisplayName(ChatColor.YELLOW + "Moc Cienia");
-            shadowMeta.setLore(List.of(ChatColor.GRAY + "+15% szansy na krytyczne ciosy przez 10s."));
-            shadowItem.setItemMeta(shadowMeta);
-        }
+        ItemStack shadowItem = createGuiItem(Material.ENDER_PEARL, ChatColor.YELLOW + "Moc Cienia", "+15% szansy na krytyczne ciosy przez 10s.");
 
-        
-        gui.setItem(13, strategItem); // Slot 1: Tryb Strateg
-        gui.setItem(21, controlItem); // Slot 3: Tryb Mistrz Kontroli
-        gui.setItem(29, regenItem);   // Slot 5: Tryb Regeneracji
-        gui.setItem(37, shadowItem); // Slot 7: Tryb Moc Cienia
+        gui.setItem(13, strategItem); 
+        gui.setItem(22, controlItem); 
+        gui.setItem(30, regenItem);   
+        gui.setItem(38, shadowItem); 
 
         return gui;
     }
@@ -79,13 +51,12 @@ public class SwordModeGUI implements Listener, CommandExecutor {
             return true;
         }
 
-        // Otwórz GUI
+       
         Inventory gui = createModeSelectionGUI();
         player.openInventory(gui);
         return true;
     }
 
-   
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
         if (event.getView().getTitle().equals(ChatColor.DARK_PURPLE + "Wybierz Tryb")) {
@@ -111,10 +82,21 @@ public class SwordModeGUI implements Listener, CommandExecutor {
                     player.sendMessage(ChatColor.GREEN + "Wybrano tryb: " + ChatColor.YELLOW + "Moc Cienia");
                 }
 
-                
                 player.closeInventory();
             }
         }
+    }
+
+    
+    private ItemStack createGuiItem(Material material, String name, String lore) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(name);
+            meta.setLore(List.of(ChatColor.GRAY + lore));
+            item.setItemMeta(meta);
+        }
+        return item;
     }
 
     
