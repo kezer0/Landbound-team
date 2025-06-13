@@ -1,6 +1,6 @@
 package me.kezer0.landbound.commands.hub;
 
-import me.kezer0.landbound.player.playerDataListener;
+import me.kezer0.landbound.player.playerDataManager;
 import me.kezer0.landbound.land.generation.worldDataGenerator;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -23,7 +23,7 @@ public class hubCommand implements CommandExecutor {
         }
         Player player = (Player) commandSender;
         World world = Bukkit.getWorld("world");
-        File playersRootFolder = playerDataListener.getPlayersRootFolder();
+        File playersRootFolder = playerDataManager.getPlayersRootFolder();
         File islandFile = new File(playersRootFolder, player.getUniqueId() + "/island.yml");
         worldDataGenerator generator = new worldDataGenerator(player, islandFile);
         Location location = new Location(world, 1,100,1);

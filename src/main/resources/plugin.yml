@@ -25,4 +25,10 @@ commands:
     usage: "/testitem"
     permission: "permission.node"
     permission-message: "You do not have permission to use this command"
+  entity:
+    description: "entity"
+    usage: "/entity"
+    permission: "permission.node"
+    permission-message: "You do not have permission to use this command"
+
 

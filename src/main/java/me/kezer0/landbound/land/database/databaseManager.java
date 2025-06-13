@@ -1,4 +1,4 @@
-package me.kezer0.landbound.database;
+package me.kezer0.landbound.land.database;
 
 import org.bukkit.Bukkit;
 
@@ -6,22 +6,21 @@ import java.io.File;
 import java.sql.*;
 
 public class databaseManager {
+
     private static Connection connection;
 
     public static void initDatabase() {
         try {
-            File dataFolder = new File(Bukkit.getPluginsFolder(), "LandBound/database");
+            File dataFolder = new File(Bukkit.getPluginsFolder(), "LandBound/players/database");
             if (!dataFolder.exists()) dataFolder.mkdirs();
-            File dbFile = new File(dataFolder, "blocks.db");
+            File dbFile = new File(dataFolder, "player.db");
 
             connection = DriverManager.getConnection("jdbc:sqlite:" + dbFile.getAbsolutePath());
             createTables();
-            alterTablesIfNeeded();
         } catch (SQLException e) {
             Bukkit.getLogger().severe("[LandBound] Błąd podczas inicjalizacji bazy danych SQLite:");
             e.printStackTrace();
         }
-        Bukkit.getLogger().info("[LandBound] Połączono z bazą danych SQLite!");
     }
 
    private static void createTables() throws SQLException {
@@ -53,31 +52,23 @@ public class databaseManager {
                     PRIMARY KEY (x, y, z, entityType)
                 );
             """);
-        }
-    }
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS items (
+                    id TEXT,
+                    material TEXT NOT NULL,
+                    displayName TEXT,
+                    PRIMARY KEY (id, material, displayName)
+                );
+            """);
+            stmt.execute("""
+                CREATE TABLE IF NOT EXISTS players (
+                    uuid TEXT NOT NULL PRIMARY KEY,
+                    level INTEGER NOT NULL DEFAULT 1,
+                    health DOUBLE NOT NULL DEFAULT 20.0,
+                    damage INTEGER NOT NULL DEFAULT 1
+                );
+            """);
 
-    private static void alterTablesIfNeeded() {
-        try (Statement stmt = connection.createStatement()) {
-
-            ResultSet rs = stmt.executeQuery("PRAGMA table_info(blocks);");
-            boolean hasItemsColumn = false;
-
-            while (rs.next()) {
-                String columnName = rs.getString("name");
-                if ("items".equalsIgnoreCase(columnName)) {
-                    hasItemsColumn = true;
-                    break;
-                }
-            }
-            rs.close();
-
-            if (!hasItemsColumn) {
-                Bukkit.getLogger().info("[LandBound] Dodawanie brakującej kolumny 'items' do tabeli 'blocks'...");
-                stmt.execute("ALTER TABLE blocks ADD COLUMN items TEXT;");
-            }
-        } catch (SQLException e) {
-            Bukkit.getLogger().severe("[LandBound] Błąd podczas sprawdzania lub dodawania kolumny 'items':");
-            e.printStackTrace();
         }
     }
 
@@ -101,4 +92,5 @@ public class databaseManager {
             }
         }
     }
+
 }

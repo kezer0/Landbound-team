@@ -2,8 +2,7 @@ package me.kezer0.landbound.land.entity;
 
 import com.destroystokyo.paper.event.entity.EntityAddToWorldEvent;
 import com.destroystokyo.paper.event.entity.EntityRemoveFromWorldEvent;
-import me.kezer0.landbound.database.databaseManager;
-import org.bukkit.Bukkit;
+import me.kezer0.landbound.land.database.databaseManager;
 import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -23,17 +22,18 @@ public class entityDataListener implements Listener {
         if (entityReconstructor.isLoadingEntities) return;
 
         Entity entity = e.getEntity();
+        if(!(entity.getWorld().getName().startsWith("island_"))) return;
         if (entity instanceof ItemFrame || entity instanceof ArmorStand || entity instanceof Painting) {
-            entityDataSaver.queueEntity(entity);
+            entitySaver.queueEntity(entity);
         }
 }
 
     @EventHandler
     public void onEntityRemove(EntityRemoveFromWorldEvent e) {
-
         Entity entity = e.getEntity();
-        if (!(entity instanceof ItemFrame || entity instanceof ArmorStand || entity instanceof Painting)) return;
-        Bukkit.getLogger().info("Entity remove");
+        if(!(entity.getWorld().getName().startsWith("island_"))) return;
+        if(!(entity instanceof ItemFrame || entity instanceof ArmorStand || entity instanceof Painting)) return;
+
         Location loc = entity.getLocation();
         String world = loc.getWorld().getName();
 
@@ -53,6 +53,7 @@ public class entityDataListener implements Listener {
     }
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
-        entityDataSaver.flushBufferToDisk();
+        entitySaver.flushBufferToDisk();
     }
+
 }

@@ -3,9 +3,11 @@ package me.kezer0.landbound.land.blocks;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import me.kezer0.landbound.database.databaseManager;
-import me.kezer0.landbound.items.itemRegistry;
-import org.bukkit.*;
+import me.kezer0.landbound.land.database.databaseManager;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.*;
 import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
@@ -16,6 +18,7 @@ import org.bukkit.inventory.DoubleChestInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BlockStateMeta;
+import me.kezer0.landbound.items.itemRegistry;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -28,8 +31,7 @@ import java.util.UUID;
 import static me.kezer0.landbound.utils.signUtil.deserializeSignText;
 
 public class blockReconstructor {
-
-    private static Map<Location, ItemStack[]> doubleChestBuffer = new HashMap<>();
+    private static final Map<Location, ItemStack[]> doubleChestBuffer = new HashMap<>();
 
     public static void loadBlocks(Player player) {
         UUID uuid = player.getUniqueId();

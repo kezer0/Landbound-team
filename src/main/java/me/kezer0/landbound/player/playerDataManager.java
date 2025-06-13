@@ -1,146 +1,90 @@
 package me.kezer0.landbound.player;
 
-import me.kezer0.landbound.database.databaseHelper;
-import me.kezer0.landbound.land.generation.worldCreator;
+import me.kezer0.landbound.Landbound;
+import me.kezer0.landbound.land.database.databaseManager;
+import me.kezer0.landbound.player.combatSystem.dash;
 import org.bukkit.Bukkit;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 
-import java.io.File;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
+import static me.kezer0.landbound.player.playerNameTag.setPlayerTag;
+
 public class playerDataManager {
-//W PÓŹNIEJSZYM UŻYDKU
-    public static void handlePlayerJoin(Player player) {
+    private static final Map<UUID, playerStatistics> playerStatsMap = new HashMap<>();
 
+    public static void initPlayer(Player player) {
         UUID uuid = player.getUniqueId();
-        File playerFolder = new File("plugins/LandBound/players/" + uuid);
-        File islandFile = new File(playerFolder, "island.yml");
+        playerStatistics stats = loadStatsFromDatabase(uuid);
+        playerStatsMap.put(uuid, stats);
 
-        if (!playerFolder.exists()) {
-            playerFolder.mkdirs();
-        }
-
-
-        if (!islandFile.exists()) {
-            Bukkit.getLogger().info("[LandBound] Tworzenie świata wyspy dla gracza " + player.getName());
-            worldCreator.createIslandWorld(player);
-        } else {
-
-            if (Bukkit.getWorld(uuid.toString()) == null) {
-
-                worldCreator.createIslandWorld(player);
-            }
-        }
+        player.setHealth(stats.getHealth());
+        player.getAttribute(Attribute.GENERIC_FALL_DAMAGE_MULTIPLIER).setBaseValue(0);
+        player.setFoodLevel(20);
+        player.setExhaustion(0);
+        setPlayerTag(player);
+        Bukkit.getPluginManager().registerEvents(new dash(), Landbound.getInstance());
     }
 
-    public static void createTable() {
-        String sql = """
-            CREATE TABLE IF NOT EXISTS players (
-                uuid TEXT PRIMARY KEY,
-                balance DOUBLE DEFAULT 0,
-                level INTEGER DEFAULT 0,
-                experience DOUBLE DEFAULT 0
+    public static void savePlayer(Player player) {
+        UUID uuid = player.getUniqueId();
+        playerStatistics stats = playerStatsMap.get(uuid);
+        if (stats == null) return;
+
+        try (Connection conn = databaseManager.getConnection()) {
+            conn.setAutoCommit(false);
+            PreparedStatement stmt = conn.prepareStatement(
+                "INSERT OR REPLACE INTO players (uuid, level, health, damage) VALUES (?, ?, ?, ?)"
             );
-        """;
 
-        try (Connection conn = databaseHelper.getConnection();
-             Statement stmt = conn.createStatement()) {
+            stmt.setString(1, uuid.toString());
+            stmt.setInt(2, stats.getLevel());
+            stmt.setDouble(3, stats.getHealth());
+            stmt.setInt(4, stats.getDamage());
+            stmt.addBatch();
 
-            stmt.execute(sql);
+            stmt.executeBatch();
+            conn.commit();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    public static void createPlayerIfNotExists(UUID uuid) {
+    private static playerStatistics loadStatsFromDatabase(UUID uuid) {
+        String sql = "SELECT * FROM players WHERE uuid = ?";
+        try (Connection conn = databaseManager.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-        String checkSql = "SELECT uuid FROM players WHERE uuid = ?";
-        String insertSql = "INSERT INTO players (uuid) VALUES (?)";
+            stmt.setString(1, uuid.toString());
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    int level = rs.getInt("level");
+                    double health = rs.getDouble("health");
+                    int damage = rs.getInt("damage");
 
-        try (Connection conn = databaseHelper.getConnection();
-             PreparedStatement checkStmt = conn.prepareStatement(checkSql)) {
-
-            checkStmt.setString(1, uuid.toString());
-            ResultSet rs = checkStmt.executeQuery();
-
-            if (!rs.next()) {
-
-                try (PreparedStatement insertStmt = conn.prepareStatement(insertSql)) {
-
-                    insertStmt.setString(1, uuid.toString());
-                    insertStmt.executeUpdate();
+                    return new playerStatistics(uuid, health, damage, level);
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
+        return new playerStatistics(uuid, 20, 1, 1); // domyślne statystyki
     }
 
-    public static void savePlayerData(UUID uuid, double balance, int level, double experience) {
-
-        String sql = "UPDATE players SET balance = ?, level = ?, experience = ? WHERE uuid = ?";
-
-        try (Connection conn = databaseHelper.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setDouble(1, balance);
-            stmt.setInt(2, level);
-            stmt.setDouble(3, experience);
-            stmt.setString(4, uuid.toString());
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+    public static playerStatistics getStats(Player player) {
+        return playerStatsMap.get(player.getUniqueId());
     }
 
-    public static double getBalance(UUID uuid) {
-        return getDouble(uuid, "balance");
+    public static void removePlayer(Player player) {
+        playerStatsMap.remove(player.getUniqueId());
     }
 
-    public static int getLevel(UUID uuid) {
-        return getInt(uuid, "level");
-    }
-
-    public static double getExperience(UUID uuid) {
-        return getDouble(uuid, "experience");
-    }
-
-    private static double getDouble(UUID uuid, String column) {
-
-        String sql = "SELECT " + column + " FROM players WHERE uuid = ?";
-
-        try (Connection conn = databaseHelper.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, uuid.toString());
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-
-                return rs.getDouble(column);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
-
-    private static int getInt(UUID uuid, String column) {
-
-        String sql = "SELECT " + column + " FROM players WHERE uuid = ?";
-
-        try (Connection conn = databaseHelper.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-
-            stmt.setString(1, uuid.toString());
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-
-                return rs.getInt(column);
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return 0;
-    }
 }

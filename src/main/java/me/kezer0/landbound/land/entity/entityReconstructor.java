@@ -3,7 +3,7 @@ package me.kezer0.landbound.land.entity;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import me.kezer0.landbound.land.blocks.blockReconstructor;
-import me.kezer0.landbound.database.databaseManager;
+import me.kezer0.landbound.land.database.databaseManager;
 import org.bukkit.*;
 import org.bukkit.block.BlockFace;
 import org.bukkit.entity.*;
@@ -43,7 +43,6 @@ public class entityReconstructor {
                 switch (entityType) {
                     case "ITEM_FRAME" -> reconstructItemFrame(loc, dataJson, itemJson);
                     case "ARMOR_STAND" -> reconstructArmorStand(loc, dataJson, itemJson);
-                    case "PAINTING" -> reconstructPainting(loc, dataJson);
                 }
             }
         } catch (Exception e) {
@@ -122,25 +121,6 @@ public class entityReconstructor {
             e.printStackTrace();
         }
     }
-
-    private static void reconstructPainting(Location loc, String dataJson) {
-        try {
-            JsonObject data = JsonParser.parseString(dataJson).getAsJsonObject();
-            BlockFace facing = BlockFace.valueOf(data.get("facing").getAsString());
-            Art art = Art.valueOf(data.get("art").getAsString());
-
-            Location spawnLoc = loc.clone().subtract(facing.getDirection().multiply(0.5));
-            worldCleanup(spawnLoc, Painting.class);
-
-            Painting painting = (Painting) loc.getWorld().spawnEntity(spawnLoc, EntityType.PAINTING);
-            painting.setFacingDirection(facing, true);
-            painting.setArt(art, true);
-            painting.getPersistentDataContainer().set(ENTITY_TAG, PersistentDataType.BYTE, (byte) 1);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     private static void worldCleanup(Location loc, Class<? extends Entity> entityType) {
         loc.getWorld().getNearbyEntities(loc, 0.5, 0.5, 0.5).forEach(entity -> {
             if (entityType.isInstance(entity)) {

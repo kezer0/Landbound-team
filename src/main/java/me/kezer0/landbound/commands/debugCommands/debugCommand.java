@@ -1,10 +1,9 @@
 package me.kezer0.landbound.commands.debugCommands;
 
-import me.kezer0.landbound.database.itemDatabaseManager;
+import me.kezer0.landbound.land.database.itemDatabase;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
@@ -26,7 +25,7 @@ public class debugCommand implements CommandExecutor {
         }
 
         String id = args[0];
-        Map<String, ItemStack> items = itemDatabaseManager.loadAllItems();
+        Map<String, ItemStack> items = itemDatabase.loadAllItems();
         ItemStack item = items.get(id);
 
         if (item != null) {

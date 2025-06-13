@@ -1,17 +1,17 @@
 package me.kezer0.landbound.land.entity;
 
 import com.google.gson.JsonObject;
-import me.kezer0.landbound.land.blocks.blockDataSaver;
-import me.kezer0.landbound.database.databaseManager;
+import me.kezer0.landbound.land.blocks.blockSaver;
+import me.kezer0.landbound.land.database.databaseManager;
 import org.bukkit.entity.*;
 import org.bukkit.inventory.EntityEquipment;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
-public class entityDataSaver {
-
+public class entitySaver {
     private static final List<Entity> entityBuffer = new ArrayList<>();
 
     public static void queueEntity(Entity entity) {
@@ -50,7 +50,7 @@ public class entityDataSaver {
                     }
                     frame.getItem();
                     if (!frame.getItem().getType().isAir()) {
-                        items = blockDataSaver.serializeItem(frame.getItem());
+                        items = blockSaver.serializeItem(frame.getItem());
                     }
                 }
                 case "ARMOR_STAND" -> {
@@ -65,24 +65,19 @@ public class entityDataSaver {
 
                     EntityEquipment eq = stand.getEquipment();
                     if (eq.getHelmet() != null && !eq.getHelmet().getType().isAir())
-                        items.add("helmet", blockDataSaver.serializeItem(eq.getHelmet()));
+                        items.add("helmet", blockSaver.serializeItem(eq.getHelmet()));
                     if (eq.getChestplate() != null && !eq.getChestplate().getType().isAir())
-                        items.add("chestplate", blockDataSaver.serializeItem(eq.getChestplate()));
+                        items.add("chestplate", blockSaver.serializeItem(eq.getChestplate()));
                     if (eq.getLeggings() != null && !eq.getLeggings().getType().isAir())
-                        items.add("leggings", blockDataSaver.serializeItem(eq.getLeggings()));
+                        items.add("leggings", blockSaver.serializeItem(eq.getLeggings()));
                     if (eq.getBoots() != null && !eq.getBoots().getType().isAir())
-                        items.add("boots", blockDataSaver.serializeItem(eq.getBoots()));
+                        items.add("boots", blockSaver.serializeItem(eq.getBoots()));
                     eq.getItemInMainHand();
                     if (!eq.getItemInMainHand().getType().isAir())
-                        items.add("mainhand", blockDataSaver.serializeItem(eq.getItemInMainHand()));
+                        items.add("mainhand", blockSaver.serializeItem(eq.getItemInMainHand()));
                     eq.getItemInOffHand();
                     if (!eq.getItemInOffHand().getType().isAir())
-                        items.add("offhand", blockDataSaver.serializeItem(eq.getItemInOffHand()));
-                }
-                case "PAINTING" -> {
-                    Painting painting = (Painting) entity;
-                    data.addProperty("facing", painting.getFacing().name());
-                    data.addProperty("art", painting.getArt().name());
+                        items.add("offhand", blockSaver.serializeItem(eq.getItemInOffHand()));
                 }
                 default -> {
                     return;

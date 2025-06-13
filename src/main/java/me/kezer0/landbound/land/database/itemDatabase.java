@@ -1,4 +1,4 @@
-package me.kezer0.landbound.database;
+package me.kezer0.landbound.land.database;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -9,24 +9,10 @@ import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class itemDatabaseManager {
-
-    public static void createTable() {
-        String sql = "CREATE TABLE IF NOT EXISTS items (" +
-                     "id TEXT PRIMARY KEY," +
-                     "material TEXT NOT NULL," +
-                     "displayName TEXT" +
-                     ");";
-        try (Connection conn = databaseManager.getConnection();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
+public class itemDatabase {
 
     public static void saveItem(String id, ItemStack item) {
-        String sql = "INSERT OR REPLACE INTO items (id, material, displayName) VALUES (?, ?, ?);";
+        String sql = "INSERT INTO items (id, material, displayName) VALUES (?, ?, ?);";
         try (Connection conn = databaseManager.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, id);
@@ -67,4 +53,5 @@ public class itemDatabaseManager {
         }
         return items;
     }
+
 }
